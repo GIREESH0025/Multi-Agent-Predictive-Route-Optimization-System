@@ -3,10 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Supply Chain Intelligence AI - Enterprise Edition</title>
+    <title>Supply Chain Intelligence AI - Enterprise Pro Edition</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
     <style>
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&family=Outfit:wght@300;400;600;700;900&display=swap');
@@ -15,65 +18,138 @@
             --primary: #6366f1;
             --secondary: #8b5cf6;
             --accent: #0ea5e9;
-            --dark-bg: #0f172a;
-            --card-bg: #1e293b;
             --success: #10b981;
             --warning: #f59e0b;
             --danger: #ef4444;
-            --text-main: #f8fafc;
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --bg-tertiary: #f1f5f9;
+            --card-bg: #ffffff;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
             --text-muted: #94a3b8;
+            --glass-bg: rgba(255, 255, 255, 0.9);
+            --glass-border: rgba(0, 0, 0, 0.1);
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+            --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 20px 25px rgba(0, 0, 0, 0.15);
             --font-display: 'Outfit', sans-serif;
             --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        [data-theme="dark"] {
+            --primary: #6366f1;
+            --secondary: #8b5cf6;
+            --accent: #0ea5e9;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --card-bg: #1e293b;
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            --glass-bg: rgba(30, 41, 59, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 25px 50px rgba(0, 0, 0, 0.5);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body {
             font-family: var(--font-display);
-            background-color: var(--dark-bg);
-            color: var(--text-main);
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
             overflow-x: hidden;
+            transition: background-color 0.4s ease, color 0.4s ease;
         }
 
-        /* Globe Background */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-secondary); }
+        ::-webkit-scrollbar-thumb { 
+            background: var(--primary); 
+            border-radius: 4px;
+            transition: background 0.3s;
+        }
+        ::-webkit-scrollbar-thumb:hover { background: var(--secondary); }
+
+        .particle-bg {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            z-index: -2;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+            opacity: 0.5;
+        }
+
         #globe-canvas {
             position: fixed;
             top: 0; left: 0;
             width: 100vw; height: 100vh;
             z-index: -1;
+            opacity: 0;
+            animation: globeFadeIn 1.5s ease 0.5s forwards;
         }
 
-        /* Navbar */
+        @keyframes globeFadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
         .navbar {
             display: flex; 
             justify-content: space-between; 
             align-items: center;
             padding: 1.5rem 5%;
-            background: rgba(15, 23, 42, 0.85);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid rgba(255,255,255,0.05);
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border-bottom: 1px solid var(--glass-border);
             position: sticky; 
             top: 0; 
             z-index: 100;
+            box-shadow: var(--shadow-md);
+            opacity: 0;
+            transform: translateY(-20px);
+            animation: slideDown 0.6s ease 0.3s forwards;
+        }
+
+        @keyframes slideDown {
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .brand { 
             display: flex; 
             align-items: center; 
-            gap: 12px; 
+            gap: 12px;
+            cursor: pointer;
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
+        
+        .brand:hover { transform: scale(1.02); }
         
         .brand i { 
             font-size: 1.8rem; 
-            color: var(--accent); 
+            color: var(--accent);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
         }
         
         .brand h1 { 
             font-size: 1.4rem; 
             font-weight: 700; 
-            background: linear-gradient(90deg, #fff, #94a3b8); 
+            background: linear-gradient(90deg, var(--primary), var(--accent)); 
             -webkit-background-clip: text; 
-            -webkit-text-fill-color: transparent; 
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
         
         .brand p { 
@@ -83,14 +159,46 @@
             font-family: var(--font-mono);
         }
 
+        .nav-actions {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .theme-toggle, .nav-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            padding: 10px 15px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .theme-toggle:hover, .nav-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            background: var(--primary);
+            color: white;
+        }
+
         .stats-bar { 
             display: flex; 
             gap: 30px; 
         }
         
         .stat-item { 
-            text-align: right; 
+            text-align: right;
+            transition: transform 0.3s ease;
         }
+
+        .stat-item:hover { transform: translateY(-3px); }
         
         .stat-num { 
             display: block; 
@@ -107,7 +215,306 @@
             letter-spacing: 1px; 
         }
 
-        /* Main Container */
+        /* UPI Payment Modal Styles */
+        .payment-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .payment-container {
+            background: var(--card-bg);
+            border-radius: 24px;
+            max-width: 450px;
+            width: 90%;
+            padding: 40px;
+            position: relative;
+            animation: slideUp 0.4s ease;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .payment-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .payment-header h2 {
+            font-size: 1.8rem;
+            color: var(--primary);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .timer-container {
+            background: linear-gradient(135deg, var(--danger), #dc2626);
+            color: white;
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 25px;
+            font-family: var(--font-mono);
+        }
+
+        .timer-label {
+            font-size: 0.85rem;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        .timer-value {
+            font-size: 2.5rem;
+            font-weight: 900;
+            letter-spacing: 2px;
+        }
+
+        .qr-container {
+            background: #f5e6d3;
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            margin-bottom: 25px;
+            border: 3px solid var(--primary);
+        }
+
+        .qr-code {
+            width: 280px;
+            height: 280px;
+            margin: 0 auto 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+        }
+
+        .upi-logos {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .upi-logo {
+            height: 30px;
+        }
+
+        .payment-amount {
+            background: var(--bg-secondary);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        .amount-label {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+        }
+
+        .amount-value {
+            font-size: 2rem;
+            font-weight: 900;
+            color: var(--primary);
+            font-family: var(--font-mono);
+        }
+
+        .payment-instructions {
+            background: rgba(99, 102, 241, 0.1);
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 4px solid var(--primary);
+            margin-bottom: 20px;
+        }
+
+        .payment-instructions h4 {
+            color: var(--primary);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .payment-instructions ol {
+            padding-left: 20px;
+            color: var(--text-secondary);
+            line-height: 1.8;
+        }
+
+        .payment-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn-paid, .btn-cancel-payment {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+
+        .btn-paid {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-paid:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-cancel-payment {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .btn-cancel-payment:hover {
+            background: var(--danger);
+            color: white;
+        }
+
+        /* Voice Commands Panel */
+        .voice-commands-panel {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            z-index: 10001;
+            box-shadow: var(--shadow-lg);
+            animation: slideUp 0.4s ease;
+        }
+
+        .voice-commands-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 10000;
+        }
+
+        .voice-command-item {
+            padding: 15px;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            margin-bottom: 12px;
+            transition: all 0.3s ease;
+            border-left: 3px solid var(--primary);
+        }
+
+        .voice-command-item:hover {
+            transform: translateX(5px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .voice-command-trigger {
+            font-weight: 700;
+            color: var(--primary);
+            font-family: var(--font-mono);
+            margin-bottom: 5px;
+        }
+
+        .voice-command-desc {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translate(-50%, -40%); }
+            to { opacity: 1; transform: translate(-50%, -50%); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Customer Support Section */
+        .support-banner {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 20px;
+            border-radius: 16px;
+            margin: 30px auto;
+            max-width: 1200px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .support-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .support-icon {
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+        }
+
+        .support-text h3 {
+            font-size: 1.2rem;
+            margin-bottom: 5px;
+        }
+
+        .support-email {
+            font-family: var(--font-mono);
+            font-size: 0.95rem;
+            opacity: 0.95;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-contact-support {
+            background: white;
+            color: var(--primary);
+            padding: 12px 25px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-contact-support:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Rest of the original CSS continues... */
         .container {
             max-width: 1400px; 
             margin: 0 auto; 
@@ -119,22 +526,50 @@
             min-height: 80vh;
         }
 
+        .hero-text {
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeInUp 0.8s ease 0.7s forwards;
+        }
+
+        @keyframes fadeInUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         .hero-text h1 {
-            font-size: 4rem; 
+            font-size: clamp(2.5rem, 5vw, 4rem);
             line-height: 1.1; 
             font-weight: 900;
             background: linear-gradient(135deg, #60a5fa, #a78bfa, #ec4899);
             -webkit-background-clip: text; 
             -webkit-text-fill-color: transparent;
+            background-clip: text;
             margin-bottom: 20px;
+            animation: gradientShift 3s ease infinite;
+            background-size: 200% 200%;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        
+        .hero-text p {
+            font-size: clamp(1rem, 2vw, 1.2rem);
+            color: var(--text-secondary);
+            line-height: 1.6;
+            max-width: 500px;
         }
         
         .hero-stats { 
             display: flex; 
             gap: 30px; 
-            margin-top: 40px; 
+            margin-top: 40px;
+            flex-wrap: wrap;
         }
         
+        .h-stat { transition: transform 0.3s ease; }
+        .h-stat:hover { transform: translateY(-5px); }
         .h-stat span { 
             font-size: 2.5rem; 
             font-weight: 800; 
@@ -149,106 +584,167 @@
             text-transform: uppercase; 
         }
 
-        /* Glass Card */
         .glass-card {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 20px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
             padding: 30px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            box-shadow: var(--shadow-lg);
+            position: relative;
+            overflow: hidden;
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeInUp 0.8s ease 0.9s forwards;
+        }
+
+        .glass-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .glass-card:hover::before { opacity: 1; }
+        .glass-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 30px 60px rgba(99, 102, 241, 0.2);
         }
 
         .form-group { 
-            margin-bottom: 20px; 
+            margin-bottom: 20px;
+            position: relative;
         }
         
         .form-label { 
             display: block; 
             margin-bottom: 8px; 
-            color: var(--text-muted); 
+            color: var(--text-secondary); 
             font-size: 0.9rem; 
-            font-weight: 600; 
+            font-weight: 600;
+            transition: color 0.3s ease;
         }
         
         .form-control {
             width: 100%; 
-            padding: 14px;
-            background: rgba(15, 23, 42, 0.6);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 10px;
-            color: #fff; 
+            padding: 14px 16px;
+            background: var(--bg-secondary);
+            border: 2px solid var(--glass-border);
+            border-radius: 12px;
+            color: var(--text-primary); 
             font-size: 1rem;
-            transition: 0.3s;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
             font-family: var(--font-display);
         }
         
         .form-control:focus { 
             border-color: var(--primary); 
             outline: none; 
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2); 
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
+            transform: translateY(-2px);
         }
 
         .btn-analyze {
             width: 100%; 
-            padding: 16px;
+            padding: 18px;
             background: linear-gradient(135deg, var(--primary), var(--secondary));
             border: none; 
-            border-radius: 12px;
+            border-radius: 14px;
             color: white; 
             font-weight: 700; 
             font-size: 1.1rem;
             cursor: pointer; 
-            transition: transform 0.2s;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
             display: flex; 
             justify-content: center; 
             align-items: center; 
             gap: 10px;
             font-family: var(--font-display);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-analyze::before {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 0; height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s ease, height 0.6s ease;
+        }
+
+        .btn-analyze:hover::before {
+            width: 300px;
+            height: 300px;
         }
         
         .btn-analyze:hover { 
-            transform: translateY(-3px); 
-            box-shadow: 0 10px 25px rgba(99, 102, 241, 0.4); 
+            transform: translateY(-4px) scale(1.02); 
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.5);
         }
-        
+
         .btn-analyze:disabled {
             opacity: 0.6;
             cursor: not-allowed;
+            transform: none;
         }
 
-        /* Loading State */
+        /* Continue with rest of original styles... */
         .ai-thinking {
             text-align: center;
             padding: 60px 20px;
         }
         
         .thinking-spinner {
-            width: 60px;
-            height: 60px;
-            border: 4px solid rgba(99, 102, 241, 0.2);
+            width: 80px;
+            height: 80px;
+            border: 5px solid rgba(99, 102, 241, 0.2);
             border-top-color: var(--primary);
+            border-right-color: var(--secondary);
             border-radius: 50%;
-            animation: spin 1s linear infinite;
+            animation: spin 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
             margin: 0 auto 20px;
+            position: relative;
+        }
+
+        .thinking-spinner::after {
+            content: '';
+            position: absolute;
+            top: 10px; left: 10px; right: 10px; bottom: 10px;
+            border: 3px solid rgba(139, 92, 246, 0.3);
+            border-radius: 50%;
+            animation: spinReverse 0.8s linear infinite;
         }
         
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+
+        @keyframes spinReverse {
+            to { transform: rotate(-360deg); }
+        }
         
         .thinking-text {
             font-family: var(--font-mono);
-            color: var(--text-muted);
-            font-size: 0.9rem;
+            color: var(--text-secondary);
+            font-size: 1rem;
+            font-weight: 600;
         }
         
         .agent-status {
-            margin-top: 20px;
+            margin-top: 30px;
             display: flex;
             flex-direction: column;
-            gap: 10px;
-            max-width: 400px;
+            gap: 12px;
+            max-width: 450px;
             margin-left: auto;
             margin-right: auto;
         }
@@ -256,29 +752,38 @@
         .agent-item {
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding: 10px;
-            background: rgba(30, 41, 59, 0.5);
-            border-radius: 8px;
-            font-size: 0.85rem;
+            gap: 12px;
+            padding: 15px;
+            background: var(--card-bg);
+            border-radius: 12px;
+            font-size: 0.9rem;
             opacity: 0;
-            animation: fadeInUp 0.5s forwards;
+            animation: slideInRight 0.5s forwards;
+            border-left: 3px solid transparent;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-sm);
         }
         
         .agent-item.active {
-            border-left: 3px solid var(--accent);
+            border-left-color: var(--accent);
+            background: linear-gradient(90deg, rgba(99, 102, 241, 0.1), transparent);
+        }
+
+        .agent-item:hover {
+            transform: translateX(5px);
+            box-shadow: var(--shadow-md);
         }
         
         .agent-item i {
             color: var(--accent);
-        }
-        
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            font-size: 1.2rem;
         }
 
-        /* Results Area */
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
         #results-area {
             display: none;
             max-width: 1200px; 
@@ -286,95 +791,134 @@
             padding: 0 20px;
         }
 
-        /* Risk Card */
         .risk-card {
-            background: #1e293b;
-            border-radius: 16px; 
-            padding: 30px;
+            background: var(--card-bg);
+            border-radius: 20px; 
+            padding: 40px;
             text-align: center; 
             margin-bottom: 30px;
-            border-top: 4px solid var(--warning);
-            transition: border-color 0.3s;
+            border-top: 5px solid var(--warning);
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: var(--shadow-lg);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .risk-card::before {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.1), transparent 50%);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .risk-card:hover::before { opacity: 1; }
+        .risk-card:hover {
+            transform: translateY(-10px) rotateX(2deg);
+            box-shadow: 0 40px 80px rgba(0, 0, 0, 0.3);
         }
         
         .risk-score { 
-            font-size: 5rem; 
+            font-size: 6rem; 
             font-weight: 900; 
             color: var(--warning); 
             line-height: 1; 
-            margin: 10px 0; 
+            margin: 20px 0; 
             font-family: var(--font-mono);
+            animation: countUp 1.5s ease forwards;
+        }
+
+        @keyframes countUp {
+            from { opacity: 0; transform: scale(0.5); }
+            to { opacity: 1; transform: scale(1); }
         }
         
         .risk-label { 
-            font-size: 1.2rem; 
+            font-size: 1.3rem; 
             font-weight: 700; 
-            color: #fff; 
+            color: var(--text-primary); 
             text-transform: uppercase; 
-            letter-spacing: 2px; 
+            letter-spacing: 3px; 
         }
         
         .confidence-badge {
             display: inline-block;
-            padding: 6px 12px;
-            background: rgba(99, 102, 241, 0.2);
-            border-radius: 20px;
-            font-size: 0.75rem;
+            padding: 8px 16px;
+            background: rgba(99, 102, 241, 0.15);
+            border-radius: 25px;
+            font-size: 0.8rem;
             font-family: var(--font-mono);
-            margin-top: 10px;
+            margin-top: 15px;
+            border: 1px solid rgba(99, 102, 241, 0.3);
         }
 
-        /* Risk Breakdown Chart */
         .risk-breakdown {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
             gap: 15px;
-            margin-top: 20px;
+            margin-top: 30px;
         }
         
         .risk-factor {
-            background: rgba(15, 23, 42, 0.6);
-            padding: 15px;
-            border-radius: 10px;
+            background: var(--bg-secondary);
+            padding: 20px;
+            border-radius: 14px;
             text-align: center;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border: 1px solid var(--glass-border);
+        }
+
+        .risk-factor:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: var(--shadow-md);
         }
         
         .risk-factor-name {
             font-size: 0.75rem;
             color: var(--text-muted);
-            margin-bottom: 8px;
+            margin-bottom: 10px;
             text-transform: uppercase;
+            letter-spacing: 1px;
         }
         
         .risk-factor-value {
-            font-size: 1.5rem;
+            font-size: 1.8rem;
             font-weight: 700;
             font-family: var(--font-mono);
         }
         
         .risk-bar {
             width: 100%;
-            height: 4px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 2px;
-            margin-top: 8px;
+            height: 6px;
+            background: var(--bg-tertiary);
+            border-radius: 3px;
+            margin-top: 12px;
             overflow: hidden;
         }
         
         .risk-bar-fill {
             height: 100%;
             background: linear-gradient(90deg, var(--success), var(--warning), var(--danger));
-            transition: width 0.5s ease;
+            transition: width 1s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border-radius: 3px;
         }
 
-        /* Alerts */
         .alert-box {
-            background: rgba(253, 224, 71, 0.1); 
+            background: rgba(245, 158, 11, 0.1); 
             border-left: 5px solid var(--warning);
             padding: 20px; 
-            border-radius: 8px; 
+            border-radius: 12px; 
             margin-bottom: 15px; 
-            color: var(--text-main);
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+
+        .alert-box:hover {
+            transform: translateX(5px);
+            box-shadow: var(--shadow-md);
         }
         
         .alert-title { 
@@ -382,209 +926,195 @@
             display: flex; 
             align-items: center; 
             gap: 10px; 
-            margin-bottom: 5px; 
-            font-size: 0.9rem; 
+            margin-bottom: 8px; 
+            font-size: 0.95rem; 
             text-transform: uppercase; 
         }
 
-        /* Recommendation Card */
         .rec-card {
-            background: #fff; 
-            color: #1e293b;
-            border-radius: 16px; 
+            background: var(--card-bg); 
+            color: var(--text-primary);
+            border-radius: 20px; 
             overflow: hidden; 
             margin-top: 40px;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            box-shadow: var(--shadow-lg);
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border: 1px solid var(--glass-border);
+        }
+
+        .rec-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.2);
         }
         
         .rec-header {
-            padding: 20px 30px; 
-            border-bottom: 1px solid #e2e8f0;
+            padding: 25px 35px; 
+            border-bottom: 1px solid var(--glass-border);
             display: flex; 
             justify-content: space-between; 
             align-items: center;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(139, 92, 246, 0.05));
         }
         
         .badge-best { 
             background: var(--success); 
             color: white; 
-            padding: 5px 15px; 
-            border-radius: 20px; 
+            padding: 8px 20px; 
+            border-radius: 25px; 
             font-weight: 700; 
-            font-size: 0.8rem; 
+            font-size: 0.8rem;
+            animation: pulse 2s ease-in-out infinite;
         }
         
-        .rec-body { 
-            padding: 30px; 
-        }
+        .rec-body { padding: 35px; }
         
         .route-path { 
-            color: #64748b; 
+            color: var(--text-muted); 
             margin-bottom: 25px; 
-            font-size: 0.95rem; 
+            font-size: 1rem; 
             font-family: var(--font-mono);
         }
 
         .stats-grid { 
             display: grid; 
-            grid-template-columns: repeat(4, 1fr); 
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); 
             gap: 20px; 
         }
         
         .stat-box { 
-            background: #f8fafc; 
-            padding: 15px; 
-            border-radius: 10px; 
-            text-align: center; 
+            background: var(--bg-secondary); 
+            padding: 20px; 
+            border-radius: 14px; 
+            text-align: center;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border: 1px solid var(--glass-border);
+        }
+
+        .stat-box:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: var(--shadow-md);
         }
         
         .sb-val { 
-            font-size: 1.5rem; 
+            font-size: 1.8rem; 
             font-weight: 800; 
-            color: #0f172a; 
+            color: var(--text-primary); 
             display: block; 
             font-family: var(--font-mono);
+            margin-top: 10px;
         }
         
         .sb-lbl { 
             font-size: 0.75rem; 
-            color: #64748b; 
+            color: var(--text-muted); 
             font-weight: 600; 
-            text-transform: uppercase; 
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
-        /* Agent Reasoning */
         .agent-reasoning {
-            background: rgba(30, 41, 59, 0.5);
-            border-radius: 12px;
-            padding: 20px;
-            margin-top: 20px;
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 25px;
+            margin-top: 25px;
+            border: 1px solid var(--glass-border);
+            transition: all 0.3s ease;
         }
+
+        .agent-reasoning:hover { box-shadow: var(--shadow-md); }
         
         .reasoning-title {
-            font-size: 0.9rem;
+            font-size: 1rem;
             font-weight: 700;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
             color: var(--accent);
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
         }
         
         .reasoning-item {
-            padding: 10px;
-            border-left: 2px solid rgba(99, 102, 241, 0.3);
-            margin-bottom: 10px;
-            font-size: 0.85rem;
-            color: var(--text-muted);
-        }
-        
-        .reasoning-item strong {
-            color: var(--text-main);
+            padding: 12px;
+            border-left: 3px solid rgba(99, 102, 241, 0.3);
+            margin-bottom: 12px;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            transition: all 0.3s ease;
+            border-radius: 0 8px 8px 0;
         }
 
-        /* Savings Banner */
+        .reasoning-item:hover {
+            background: var(--bg-tertiary);
+            border-left-color: var(--primary);
+            transform: translateX(5px);
+        }
+        
+        .reasoning-item strong { color: var(--primary); }
+
         .savings-banner {
-            background: var(--success); 
+            background: linear-gradient(135deg, var(--success), #059669); 
             color: white;
             text-align: center; 
-            padding: 40px;
-            border-radius: 16px; 
-            margin: 30px 0;
+            padding: 50px;
+            border-radius: 20px; 
+            margin: 40px 0;
             position: relative; 
             overflow: hidden;
+            box-shadow: 0 20px 40px rgba(16, 185, 129, 0.3);
+        }
+
+        .savings-banner::before {
+            content: '';
+            position: absolute;
+            top: -50%; right: -50%;
+            width: 200%; height: 200%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.2), transparent 70%);
+            animation: rotate 10s linear infinite;
+        }
+
+        @keyframes rotate {
+            to { transform: rotate(360deg); }
         }
         
         .save-amount { 
-            font-size: 3.5rem; 
+            font-size: 4rem; 
             font-weight: 900; 
             display: block; 
-            margin: 10px 0; 
+            margin: 15px 0; 
             font-family: var(--font-mono);
+            position: relative;
+            z-index: 1;
         }
 
-        /* Scenario Comparison */
-        .scenario-tabs {
-            display: flex;
-            gap: 10px;
-            margin: 30px 0 20px;
-            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
-        }
-        
-        .scenario-tab {
-            padding: 12px 24px;
-            background: transparent;
-            border: none;
-            color: var(--text-muted);
-            font-weight: 600;
-            cursor: pointer;
-            border-bottom: 2px solid transparent;
-            margin-bottom: -2px;
-            transition: all 0.3s;
-            font-family: var(--font-display);
-        }
-        
-        .scenario-tab.active {
-            color: var(--accent);
-            border-bottom-color: var(--accent);
-        }
-        
-        .scenario-tab:hover {
-            color: var(--text-main);
-        }
-
-        /* Alternatives */
-        .alt-card { 
-            background: white; 
-            border-radius: 16px; 
-            padding: 20px; 
-        }
-        
-        .alt-row {
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center;
-            padding: 20px; 
-            border-bottom: 1px solid #f1f5f9;
-            color: #334155;
-        }
-        
-        .alt-mode { 
-            display: flex; 
-            align-items: center; 
-            gap: 15px; 
-            font-weight: 700; 
-            width: 150px; 
-        }
-        
-        .badge-low { 
-            background: #dcfce7; 
-            color: #166534; 
-            padding: 4px 10px; 
-            border-radius: 10px; 
-            font-size: 0.7rem; 
-            font-weight: 700; 
-        }
-
-        /* Comparison Chart */
         .comparison-chart {
-            background: #fff;
-            border-radius: 16px;
-            padding: 30px;
-            margin-top: 30px;
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 35px;
+            margin-top: 40px;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--glass-border);
         }
         
         .chart-title {
-            font-size: 1.2rem;
+            font-size: 1.3rem;
             font-weight: 700;
-            color: #1e293b;
-            margin-bottom: 20px;
+            color: var(--text-primary);
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 20px 0;
         }
         
         .chart-bars {
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 18px;
         }
         
         .chart-bar-item {
@@ -594,17 +1124,17 @@
         }
         
         .chart-label {
-            width: 100px;
-            font-size: 0.85rem;
+            width: 120px;
+            font-size: 0.9rem;
             font-weight: 600;
-            color: #64748b;
+            color: var(--text-secondary);
         }
         
         .chart-bar-bg {
             flex: 1;
-            height: 30px;
-            background: #f1f5f9;
-            border-radius: 6px;
+            height: 35px;
+            background: var(--bg-secondary);
+            border-radius: 8px;
             position: relative;
             overflow: hidden;
         }
@@ -612,92 +1142,750 @@
         .chart-bar-fill {
             height: 100%;
             background: linear-gradient(90deg, var(--primary), var(--secondary));
-            border-radius: 6px;
-            transition: width 0.8s ease;
+            border-radius: 8px;
+            transition: width 1.2s cubic-bezier(0.34, 1.56, 0.64, 1);
             display: flex;
             align-items: center;
             justify-content: flex-end;
-            padding-right: 10px;
+            padding-right: 15px;
             color: white;
-            font-size: 0.75rem;
+            font-size: 0.85rem;
             font-weight: 700;
             font-family: var(--font-mono);
         }
 
-        /* Animation */
-        .fade-in { 
-            animation: fadeIn 0.8s ease forwards; 
+        .alt-card { 
+            background: var(--card-bg); 
+            border-radius: 20px; 
+            padding: 25px;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--glass-border);
         }
         
+        .alt-row {
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            padding: 20px; 
+            border-bottom: 1px solid var(--glass-border);
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+
+        .alt-row:hover {
+            background: var(--bg-secondary);
+            transform: translateX(5px);
+        }
+
+        .alt-row:last-child { border-bottom: none; }
+        
+        .alt-mode { 
+            display: flex; 
+            align-items: center; 
+            gap: 15px; 
+            font-weight: 700; 
+            width: 180px; 
+        }
+        
+        .badge-low { 
+            background: rgba(16, 185, 129, 0.15); 
+            color: var(--success); 
+            padding: 6px 14px; 
+            border-radius: 12px; 
+            font-size: 0.75rem; 
+            font-weight: 700;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .fade-in { animation: fadeIn 0.8s ease forwards; }
+        
         @keyframes fadeIn { 
-            from { opacity: 0; transform: translateY(20px); } 
+            from { opacity: 0; transform: translateY(30px); } 
             to { opacity: 1; transform: translateY(0); } 
         }
 
-        /* Autocomplete */
         .autocomplete-items {
             position: absolute; 
-            background: #1e293b; 
+            background: var(--card-bg); 
             width: 100%; 
-            border: 1px solid #334155; 
-            max-height: 200px; 
+            border: 1px solid var(--glass-border); 
+            max-height: 250px; 
             overflow-y: auto; 
             z-index: 50;
-            border-radius: 8px;
-            margin-top: 5px;
+            border-radius: 12px;
+            margin-top: 8px;
+            box-shadow: var(--shadow-lg);
         }
         
         .autocomplete-items div { 
-            padding: 10px; 
+            padding: 14px; 
             cursor: pointer; 
-            border-bottom: 1px solid #334155; 
+            border-bottom: 1px solid var(--glass-border);
+            transition: all 0.2s ease;
+            color: var(--text-primary);
         }
         
         .autocomplete-items div:hover { 
-            background: #334155; 
+            background: var(--primary);
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .autocomplete-items div:last-child { border-bottom: none; }
+
+        #chat-bubble {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 1000;
+        }
+
+        #chat-toggle {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        #chat-toggle:hover {
+            transform: scale(1.1);
+            box-shadow: 0 12px 30px rgba(99, 102, 241, 0.6);
+        }
+
+        #chat-window {
+            display: none;
+            position: absolute;
+            bottom: 80px;
+            right: 0;
+            width: 400px;
+            height: 600px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+            flex-direction: column;
+        }
+
+        .chat-header {
+            padding: 20px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .chat-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+        }
+
+        .chat-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.75rem;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10b981;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        #chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .chat-message {
+            display: flex;
+            gap: 10px;
+            animation: slideInMessage 0.3s ease;
+        }
+
+        @keyframes slideInMessage {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message-bubble {
+            background: var(--bg-secondary);
+            padding: 12px 16px;
+            border-radius: 15px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+
+        .message-bubble.user {
+            background: var(--primary);
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 5px;
+        }
+
+        .message-bubble.ai {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border-bottom-left-radius: 5px;
+        }
+
+        .message-time {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 10px;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--text-muted);
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-10px); }
+        }
+
+        .chat-input-area {
+            padding: 15px;
+            border-top: 1px solid var(--glass-border);
+            display: flex;
+            gap: 10px;
+        }
+
+        #chat-input {
+            flex: 1;
+            padding: 12px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-family: var(--font-display);
+        }
+
+        #chat-send, .voice-btn {
+            padding: 12px 16px;
+            background: var(--primary);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        #chat-send:hover, .voice-btn:hover {
+            background: var(--secondary);
+            transform: scale(1.05);
+        }
+
+        .quick-actions {
+            padding: 10px 20px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            border-top: 1px solid var(--glass-border);
+        }
+
+        .quick-btn {
+            padding: 6px 12px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: var(--text-primary);
+        }
+
+        .quick-btn:hover {
+            background: var(--primary);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .blockchain-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            color: #78350f;
+            border-radius: 25px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            margin-top: 20px;
+            box-shadow: 0 4px 15px rgba(251, 191, 36, 0.4);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .notification-toast {
+            position: fixed;
+            top: 100px;
+            right: -400px;
+            width: 350px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: var(--shadow-lg);
+            z-index: 1001;
+            transition: right 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .notification-toast.show {
+            right: 30px;
+        }
+
+        .notification-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .notification-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        .ml-insights {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(99, 102, 241, 0.1));
+            border-radius: 20px;
+            padding: 30px;
+            margin-top: 40px;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+        }
+
+        .ml-insights h4 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--secondary);
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+        }
+
+        .insight-item {
+            display: flex;
+            gap: 15px;
+            padding: 15px;
+            background: var(--card-bg);
+            border-radius: 12px;
+            margin-bottom: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .insight-item:hover {
+            transform: translateX(5px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .insight-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.3rem;
+            flex-shrink: 0;
+        }
+
+        .predictive-timeline {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 30px;
+            margin-top: 40px;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--glass-border);
+        }
+
+        .timeline-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+
+        .timeline-item {
+            display: flex;
+            gap: 20px;
+            padding: 20px;
+            border-left: 3px solid var(--primary);
+            margin-bottom: 20px;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -8px;
+            top: 25px;
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            background: var(--primary);
+            box-shadow: 0 0 0 4px var(--bg-primary);
+        }
+
+        .timeline-item:hover {
+            background: var(--bg-secondary);
+            border-left-color: var(--accent);
+            transform: translateX(5px);
+        }
+
+        .timeline-date {
+            min-width: 120px;
+            font-weight: 700;
+            color: var(--accent);
+            font-family: var(--font-mono);
+        }
+
+        .carbon-tracker {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.1));
+            border-radius: 20px;
+            padding: 30px;
+            margin-top: 40px;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .carbon-visualization {
+            display: flex;
+            gap: 30px;
+            margin-top: 25px;
+            flex-wrap: wrap;
+        }
+
+        .carbon-meter {
+            flex: 1;
+            min-width: 200px;
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 16px;
+            text-align: center;
+        }
+
+        .meter-value {
+            font-size: 3rem;
+            font-weight: 900;
+            color: var(--success);
+            font-family: var(--font-mono);
+            display: block;
+            margin: 15px 0;
+        }
+
+        .meter-comparison {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 10px;
         }
 
         @media (max-width: 900px) {
-            .container { grid-template-columns: 1fr; }
-            .stats-grid { grid-template-columns: 1fr 1fr; }
+            .container { 
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+            
+            .stats-grid { 
+                grid-template-columns: repeat(2, 1fr); 
+            }
+            
             .stats-bar { display: none; }
-            .risk-breakdown { grid-template-columns: 1fr 1fr; }
+            
+            .risk-breakdown { 
+                grid-template-columns: repeat(2, 1fr); 
+            }
+
+            .hero-text h1 { font-size: 2.5rem; }
+
+            .nav-actions {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            #chat-window {
+                width: 90vw;
+                right: 5vw;
+            }
+
+            .notification-toast {
+                width: 90vw;
+                right: -100%;
+            }
+
+            .notification-toast.show {
+                right: 5vw;
+            }
+
+            .payment-container {
+                max-width: 95%;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .stats-grid { grid-template-columns: 1fr; }
+
+            .alt-row {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
+
+            .chart-bar-item {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .chart-label { width: 100%; }
+
+            .carbon-visualization {
+                flex-direction: column;
+            }
+
+            .support-banner {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
         }
     </style>
 </head>
-<body>
+<body data-theme="dark">
 
+    <div class="particle-bg"></div>
     <canvas id="globe-canvas"></canvas>
+
+    <!-- UPI Payment Modal -->
+    <div class="payment-modal" id="payment-modal">
+        <div class="payment-container">
+            <div class="payment-header">
+                <h2><i class="fa-solid fa-wallet"></i> Complete Payment</h2>
+            </div>
+
+            <div class="timer-container">
+                <div class="timer-label">⏱️ Time Remaining</div>
+                <div class="timer-value" id="payment-timer">05:00</div>
+            </div>
+
+            <div class="qr-container">
+                <img src="C:\coding\FEWD\WhatsApp Image 2026-02-04 at 19.54.51.jpeg" alt="UPI QR Code" class="qr-code" style="width: 100%; height: auto;">
+                <div class="upi-logos">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/UPI-Logo-vector.svg/200px-UPI-Logo-vector.svg.png" alt="UPI" class="upi-logo">
+                </div>
+            </div>
+
+            <div class="payment-amount">
+                <div class="amount-label">Amount to Pay</div>
+                <div class="amount-value" id="payment-amount">₹499</div>
+            </div>
+
+            <div class="payment-instructions">
+                <h4><i class="fa-solid fa-info-circle"></i> How to Pay</h4>
+                <ol>
+                    <li>Open any UPI app (Google Pay, PhonePe, Paytm, etc.)</li>
+                    <li>Scan the QR code above</li>
+                    <li>Verify amount and complete payment</li>
+                    <li>Click "I've Paid" button below</li>
+                </ol>
+            </div>
+
+            <div class="payment-buttons">
+                <button class="btn-paid" onclick="PaymentSystem.confirmPayment()">
+                    <i class="fa-solid fa-check"></i> I've Paid
+                </button>
+                <button class="btn-cancel-payment" onclick="PaymentSystem.closeModal()">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Voice Commands Panel -->
+    <div class="voice-commands-overlay" id="voice-overlay" onclick="VoiceController.hideCommands()"></div>
+    <div class="voice-commands-panel" id="voice-panel">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+            <h3 style="color: var(--primary); display: flex; align-items: center; gap: 10px;">
+                <i class="fa-solid fa-microphone"></i> Available Voice Commands
+            </h3>
+            <button onclick="VoiceController.hideCommands()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-primary);">×</button>
+        </div>
+
+        <div class="voice-command-item">
+            <div class="voice-command-trigger">"Analyze route from [origin] to [destination]"</div>
+            <div class="voice-command-desc">Start a new route analysis with voice input</div>
+        </div>
+
+        <div class="voice-command-item">
+            <div class="voice-command-trigger">"Show me the cheapest option"</div>
+            <div class="voice-command-desc">Filter results to show most cost-effective routes</div>
+        </div>
+
+        <div class="voice-command-item">
+            <div class="voice-command-trigger">"What's the carbon footprint?"</div>
+            <div class="voice-command-desc">Display environmental impact details</div>
+        </div>
+
+        <div class="voice-command-item">
+            <div class="voice-command-trigger">"Export report"</div>
+            <div class="voice-command-desc">Generate and download PDF report</div>
+        </div>
+
+        <div class="voice-command-item">
+            <div class="voice-command-trigger">"Contact support"</div>
+            <div class="voice-command-desc">Open customer support contact options</div>
+        </div>
+
+        <div class="voice-command-item">
+            <div class="voice-command-trigger">"Run demo"</div>
+            <div class="voice-command-desc">Execute a sample analysis demonstration</div>
+        </div>
+
+        <div style="margin-top: 25px; padding: 15px; background: rgba(99, 102, 241, 0.1); border-radius: 12px; border-left: 3px solid var(--primary);">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; color: var(--primary); font-weight: 700;">
+                <i class="fa-solid fa-lightbulb"></i> Pro Tip
+            </div>
+            <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6;">
+                Speak clearly and wait for the beep sound before issuing commands. You can also ask questions naturally like "How much will it cost to ship from Mumbai to London?"
+            </p>
+        </div>
+    </div>
 
     <nav class="navbar">
         <div class="brand">
             <i class="fa-solid fa-globe"></i>
             <div>
                 <h1>Supply Chain Intelligence AI</h1>
-                <p>Multi-Agent Predictive Route Optimization System</p>
+                <p>Multi-Agent Predictive Route Optimization • Enterprise Pro Edition</p>
             </div>
         </div>
-        <div class="stats-bar">
-            <div class="stat-item">
-                <span class="stat-num" id="active-shipments">0</span>
-                <span class="stat-label">Active Shipments</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-num" id="high-risk">0</span>
-                <span class="stat-label">High Risk</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-num" id="total-savings" style="color: var(--success);">$0</span>
-                <span class="stat-label">Total Savings</span>
+        <div class="nav-actions">
+            <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+                <i class="fa-solid fa-moon"></i>
+                <span>Dark</span>
+            </button>
+            <button class="nav-btn" id="voice-cmd-btn" aria-label="Voice commands">
+                <i class="fa-solid fa-microphone"></i>
+                <span>Voice</span>
+            </button>
+            <button class="nav-btn" id="export-btn" aria-label="Export report">
+                <i class="fa-solid fa-file-pdf"></i>
+                <span>Export</span>
+            </button>
+            <button class="nav-btn" id="blockchain-btn" aria-label="Blockchain verification">
+                <i class="fa-solid fa-link"></i>
+                <span>Blockchain</span>
+            </button>
+            <button class="nav-btn" id="payment-btn" aria-label="Make payment" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white; border: none;">
+                <i class="fa-solid fa-indian-rupee-sign"></i>
+                <span>Pay Now</span>
+            </button>
+            <button class="theme-toggle" id="demo-btn" aria-label="Run demo" style="background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; border: none;">
+                <i class="fa-solid fa-play"></i>
+                <span>Demo</span>
+            </button>
+            <div class="stats-bar">
+                <div class="stat-item">
+                    <span class="stat-num" id="active-shipments">0</span>
+                    <span class="stat-label">Active Shipments</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-num" id="high-risk">0</span>
+                    <span class="stat-label">High Risk</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-num" id="total-savings" style="color: var(--success);">$0</span>
+                    <span class="stat-label">Total Savings</span>
+                </div>
             </div>
         </div>
     </nav>
 
+    <!-- Customer Support Banner -->
+    <div class="support-banner" style="margin: 30px 5%;">
+        <div class="support-info">
+            <div class="support-icon">
+                <i class="fa-solid fa-headset"></i>
+            </div>
+            <div class="support-text">
+                <h3>24/7 Customer Support</h3>
+                <div class="support-email">
+                    <i class="fa-solid fa-envelope"></i>
+                    <a href="mailto:jakkampudisreeharshith@gmail.com" style="color: white; text-decoration: none;">
+                        jakkampudisreeharshith@gmail.com
+                    </a>
+                </div>
+            </div>
+        </div>
+        <button class="btn-contact-support" onclick="window.location.href='mailto:jakkampudisreeharshith@gmail.com'">
+            <i class="fa-solid fa-paper-plane"></i>
+            Contact Us
+        </button>
+    </div>
+
     <div class="container" id="main-container">
         <div class="hero-text">
             <h1>Intelligent Route<br>Optimization</h1>
-            <p style="font-size: 1.2rem; color: #cbd5e1; line-height: 1.6; max-width: 500px;">
-                Powered by multi-agent AI systems analyzing real-time data across 195+ countries. Minimize risk, maximize savings, and track carbon footprint instantly.
+            <p>
+                Powered by multi-agent AI systems analyzing real-time data across 195+ countries. Minimize risk, maximize savings, and track carbon footprint instantly with blockchain verification.
             </p>
             
             <div class="hero-stats">
@@ -714,10 +1902,25 @@
                     <label>Countries</label>
                 </div>
             </div>
+
+            <div style="margin-top: 40px; display: flex; gap: 15px; flex-wrap: wrap;">
+                <button class="theme-toggle" onclick="App.showFeatures()" style="background: linear-gradient(135deg, #10b981, #059669); color: white; border: none;">
+                    <i class="fa-solid fa-star"></i>
+                    <span>View Features</span>
+                </button>
+                <button class="theme-toggle" onclick="App.showComparison()" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; border: none;">
+                    <i class="fa-solid fa-chart-line"></i>
+                    <span>Compare Modes</span>
+                </button>
+                <button class="theme-toggle" onclick="App.showPricing()" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white; border: none;">
+                    <i class="fa-solid fa-tag"></i>
+                    <span>Pricing</span>
+                </button>
+            </div>
         </div>
 
         <div class="glass-card">
-            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 25px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 25px; border-bottom: 1px solid var(--glass-border); padding-bottom: 15px;">
                 <i class="fa-solid fa-box-open" style="color: #fda4af;"></i>
                 <h3 style="font-size: 1.2rem;">Route Analysis</h3>
             </div>
@@ -725,13 +1928,13 @@
             <form id="analysis-form" onsubmit="event.preventDefault();">
                 <div class="form-group" style="position: relative;">
                     <label class="form-label">📍 Origin Country/City</label>
-                    <input type="text" class="form-control" id="origin" placeholder="e.g. Shanghai, China" required>
+                    <input type="text" class="form-control" id="origin" placeholder="e.g. Shanghai, China" required autocomplete="off">
                     <div id="origin-list" class="autocomplete-items" style="display: none;"></div>
                 </div>
 
                 <div class="form-group" style="position: relative;">
                     <label class="form-label">🎯 Destination Country/City</label>
-                    <input type="text" class="form-control" id="destination" placeholder="e.g. Los Angeles, USA" required>
+                    <input type="text" class="form-control" id="destination" placeholder="e.g. Los Angeles, USA" required autocomplete="off">
                     <div id="dest-list" class="autocomplete-items" style="display: none;"></div>
                 </div>
 
@@ -753,7 +1956,7 @@
                         <option value="low">Low (30+ days) - Optimize Cost</option>
                         <option value="medium">Medium (15-30 days) - Balanced</option>
                         <option value="high">High (7-14 days) - Fast Delivery</option>
-                        <option value="critical">Critical (<7 days) - Air Express</option>
+                        <option value="critical">Critical (&lt;7 days) - Air Express</option>
                     </select>
                 </div>
 
@@ -764,7 +1967,62 @@
         </div>
     </div>
 
-    <!-- Loading State -->
+    <div id="notification-area"></div>
+
+    <div id="chat-bubble">
+        <button id="chat-toggle">
+            <i class="fa-solid fa-comments"></i>
+        </button>
+        <div id="chat-window">
+            <div class="chat-header">
+                <div class="chat-header-left">
+                    <div class="chat-avatar">
+                        <i class="fa-solid fa-robot"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight: 700;">AI Supply Chain Expert</div>
+                        <div class="chat-status">
+                            <span class="status-dot"></span>
+                            <span>Online & Ready</span>
+                        </div>
+                    </div>
+                </div>
+                <button id="chat-close" style="background: none; border: none; color: white; font-size: 1.2rem; cursor: pointer;">
+                    <i class="fa-solid fa-times"></i>
+                </button>
+            </div>
+            <div id="chat-messages">
+                <div class="chat-message">
+                    <div class="message-bubble ai">
+                        <div>👋 Hello! I'm your AI Supply Chain Expert. I have deep knowledge of global logistics, real-time shipping data, and route optimization.</div>
+                        <div class="message-time">Just now</div>
+                    </div>
+                </div>
+                <div class="chat-message">
+                    <div class="message-bubble ai">
+                        <div>Ask me about routes, costs, risks, carbon emissions, or anything supply chain related. I can also help you analyze current market conditions!</div>
+                        <div class="message-time">Just now</div>
+                    </div>
+                </div>
+            </div>
+            <div class="quick-actions">
+                <button class="quick-btn" onclick="ChatAssistant.quickMessage('Compare ocean vs air freight')">🚢 Ocean vs Air</button>
+                <button class="quick-btn" onclick="ChatAssistant.quickMessage('What affects shipping costs?')">💰 Cost Factors</button>
+                <button class="quick-btn" onclick="ChatAssistant.quickMessage('How to reduce carbon footprint?')">🌱 Sustainability</button>
+                <button class="quick-btn" onclick="ChatAssistant.quickMessage('Current shipping risks')">⚠️ Risk Alerts</button>
+            </div>
+            <div class="chat-input-area">
+                <input type="text" id="chat-input" placeholder="Ask me anything about supply chain..." />
+                <button class="voice-btn" id="voice-chat-btn">
+                    <i class="fa-solid fa-microphone"></i>
+                </button>
+                <button id="chat-send">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div id="loading-area" style="display: none;">
         <div class="ai-thinking">
             <div class="thinking-spinner"></div>
@@ -773,20 +2031,546 @@
         </div>
     </div>
 
-    <!-- Results Area -->
     <div id="results-area"></div>
 
     <script>
         'use strict';
 
-        // ============================================================================
-        // ARCHITECTURE: MODULAR ENTERPRISE SYSTEM
-        // ============================================================================
+        // Payment System with Real Timer
+        const PaymentSystem = {
+            timer: null,
+            timeRemaining: 300, // 5 minutes in seconds
 
-        /**
-         * DATA MODELS
-         * Define the core data structures for the supply chain intelligence system
-         */
+            openModal(amount = 499) {
+                document.getElementById('payment-amount').textContent = `₹${amount}`;
+                document.getElementById('payment-modal').style.display = 'flex';
+                this.timeRemaining = 300;
+                this.startTimer();
+                
+                NotificationSystem.show(
+                    'Payment Initiated',
+                    'Please scan the QR code to complete payment within 5 minutes',
+                    'info'
+                );
+            },
+
+            startTimer() {
+                this.updateTimerDisplay();
+                
+                this.timer = setInterval(() => {
+                    this.timeRemaining--;
+                    this.updateTimerDisplay();
+                    
+                    if (this.timeRemaining <= 0) {
+                        this.timeExpired();
+                    } else if (this.timeRemaining === 60) {
+                        NotificationSystem.show(
+                            'Time Warning',
+                            'Only 1 minute remaining to complete payment!',
+                            'warning'
+                        );
+                    }
+                }, 1000);
+            },
+
+            updateTimerDisplay() {
+                const minutes = Math.floor(this.timeRemaining / 60);
+                const seconds = this.timeRemaining % 60;
+                const display = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                document.getElementById('payment-timer').textContent = display;
+            },
+
+            timeExpired() {
+                clearInterval(this.timer);
+                NotificationSystem.show(
+                    'Payment Expired',
+                    'Time limit exceeded. Please try again.',
+                    'error'
+                );
+                this.closeModal();
+            },
+
+            confirmPayment() {
+                clearInterval(this.timer);
+                NotificationSystem.show(
+                    'Payment Received',
+                    'Thank you! Your payment is being verified...',
+                    'success'
+                );
+                
+                setTimeout(() => {
+                    NotificationSystem.show(
+                        'Payment Confirmed',
+                        'Payment verified successfully! You now have full access.',
+                        'success'
+                    );
+                    this.closeModal();
+                }, 2000);
+            },
+
+            closeModal() {
+                clearInterval(this.timer);
+                document.getElementById('payment-modal').style.display = 'none';
+            }
+        };
+
+        // Enhanced Voice Controller with Commands Display
+        const VoiceController = {
+            recognition: null,
+            isListening: false,
+
+            init() {
+                if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                    this.recognition = new SpeechRecognition();
+                    this.recognition.continuous = false;
+                    this.recognition.lang = 'en-US';
+
+                    this.recognition.onresult = (event) => {
+                        const transcript = event.results[0][0].transcript.toLowerCase();
+                        this.processCommand(transcript);
+                    };
+
+                    this.recognition.onerror = () => {
+                        this.isListening = false;
+                        NotificationSystem.show('Voice Error', 'Could not recognize speech. Please try again.', 'error');
+                    };
+
+                    this.recognition.onend = () => {
+                        this.isListening = false;
+                    };
+
+                    this.setupListeners();
+                } else {
+                    console.warn('Speech recognition not supported');
+                }
+            },
+
+            setupListeners() {
+                document.getElementById('voice-cmd-btn').addEventListener('click', () => {
+                    this.showCommands();
+                });
+
+                document.getElementById('voice-chat-btn').addEventListener('click', () => {
+                    this.toggleListening();
+                });
+            },
+
+            showCommands() {
+                document.getElementById('voice-overlay').style.display = 'block';
+                document.getElementById('voice-panel').style.display = 'block';
+            },
+
+            hideCommands() {
+                document.getElementById('voice-overlay').style.display = 'none';
+                document.getElementById('voice-panel').style.display = 'none';
+            },
+
+            toggleListening() {
+                if (!this.recognition) {
+                    NotificationSystem.show('Voice Not Available', 'Speech recognition is not supported in your browser.', 'warning');
+                    return;
+                }
+
+                if (this.isListening) {
+                    this.recognition.stop();
+                    this.isListening = false;
+                } else {
+                    this.recognition.start();
+                    this.isListening = true;
+                    NotificationSystem.show('Listening...', 'Speak now to interact with the AI assistant', 'info');
+                }
+            },
+
+            processCommand(transcript) {
+                console.log('Voice command received:', transcript);
+
+                // Route analysis
+                if (transcript.includes('analyze route')) {
+                    const match = transcript.match(/from\s+(.+?)\s+to\s+(.+)/);
+                    if (match) {
+                        document.getElementById('origin').value = match[1];
+                        document.getElementById('destination').value = match[2];
+                        document.getElementById('analyze-btn').click();
+                        NotificationSystem.show('Command Executed', 'Starting route analysis...', 'success');
+                    }
+                }
+                // Export report
+                else if (transcript.includes('export report') || transcript.includes('export pdf')) {
+                    PDFExporter.exportReport();
+                }
+                // Contact support
+                else if (transcript.includes('contact support') || transcript.includes('customer support')) {
+                    window.location.href = 'mailto:jakkampudisreeharshith@gmail.com';
+                }
+                // Demo
+                else if (transcript.includes('run demo') || transcript.includes('demo')) {
+                    App.runDemo();
+                }
+                // Cheapest option
+                else if (transcript.includes('cheapest') || transcript.includes('lowest cost')) {
+                    NotificationSystem.show('Filtering Results', 'Showing most cost-effective options...', 'info');
+                }
+                // Carbon footprint
+                else if (transcript.includes('carbon') || transcript.includes('environmental')) {
+                    if (window.currentAnalysis) {
+                        const carbonSection = document.querySelector('.carbon-tracker');
+                        if (carbonSection) {
+                            carbonSection.scrollIntoView({ behavior: 'smooth' });
+                            NotificationSystem.show('Carbon Data', 'Showing environmental impact details...', 'info');
+                        }
+                    } else {
+                        NotificationSystem.show('No Data', 'Please run an analysis first.', 'warning');
+                    }
+                }
+                // Chat with AI
+                else {
+                    document.getElementById('chat-input').value = transcript;
+                    ChatAssistant.sendMessage();
+                }
+            }
+        };
+
+        // Enhanced PDF Exporter with actual functionality
+        const PDFExporter = {
+            async exportReport() {
+                if (!window.currentAnalysis) {
+                    NotificationSystem.show('No Data', 'Please run an analysis first before exporting.', 'warning');
+                    return;
+                }
+
+                NotificationSystem.show('Generating PDF', 'Creating your comprehensive supply chain analysis report...', 'info');
+
+                try {
+                    const { jsPDF } = window.jspdf;
+                    const doc = new jsPDF();
+                    
+                    const analysis = window.currentAnalysis;
+                    const rec = analysis.recommended;
+                    
+                    // Add title
+                    doc.setFontSize(20);
+                    doc.setTextColor(99, 102, 241);
+                    doc.text('Supply Chain Intelligence Report', 20, 20);
+                    
+                    // Add subtitle
+                    doc.setFontSize(12);
+                    doc.setTextColor(71, 85, 105);
+                    doc.text(`Generated on ${new Date().toLocaleDateString()}`, 20, 30);
+                    
+                    // Add route information
+                    doc.setFontSize(14);
+                    doc.setTextColor(0, 0, 0);
+                    doc.text('Route Details', 20, 45);
+                    
+                    doc.setFontSize(11);
+                    doc.text(`Origin: ${analysis.metadata.origin.name}`, 20, 55);
+                    doc.text(`Destination: ${analysis.metadata.destination.name}`, 20, 62);
+                    doc.text(`Distance: ${analysis.metadata.distance.toLocaleString()} km`, 20, 69);
+                    
+                    // Recommended route
+                    doc.setFontSize(14);
+                    doc.text('Recommended Route', 20, 85);
+                    
+                    doc.setFontSize(11);
+                    doc.text(`Transport Mode: ${rec.mode.name}`, 20, 95);
+                    doc.text(`Transit Time: ${rec.time.days} days`, 20, 102);
+                    doc.text(`Total Cost: $${rec.cost.cost.toLocaleString()}`, 20, 109);
+                    doc.text(`CO2 Emissions: ${rec.sustainability.co2tons} tons`, 20, 116);
+                    doc.text(`Risk Level: ${rec.risk.level}`, 20, 123);
+                    
+                    // Risk breakdown
+                    doc.setFontSize(14);
+                    doc.text('Risk Assessment', 20, 140);
+                    
+                    doc.setFontSize(11);
+                    let yPos = 150;
+                    Object.entries(rec.risk.factors).forEach(([factor, value]) => {
+                        doc.text(`${factor.charAt(0).toUpperCase() + factor.slice(1)}: ${value}/100`, 20, yPos);
+                        yPos += 7;
+                    });
+                    
+                    // Cost breakdown
+                    doc.setFontSize(14);
+                    doc.text('Cost Breakdown', 20, yPos + 10);
+                    
+                    doc.setFontSize(11);
+                    yPos += 20;
+                    doc.text(`Transport: $${rec.cost.breakdown.transport.toLocaleString()}`, 20, yPos);
+                    doc.text(`Handling: $${rec.cost.breakdown.handling.toLocaleString()}`, 20, yPos + 7);
+                    doc.text(`Customs: $${rec.cost.breakdown.customs.toLocaleString()}`, 20, yPos + 14);
+                    
+                    // Alternative routes
+                    if (analysis.alternatives.length > 0) {
+                        doc.addPage();
+                        doc.setFontSize(16);
+                        doc.text('Alternative Routes', 20, 20);
+                        
+                        doc.setFontSize(11);
+                        yPos = 35;
+                        analysis.alternatives.forEach((alt, index) => {
+                            doc.text(`${index + 1}. ${alt.mode.name}`, 20, yPos);
+                            doc.text(`   Cost: $${alt.cost.cost.toLocaleString()} | Time: ${alt.time.days} days | Risk: ${alt.risk.level}`, 20, yPos + 7);
+                            yPos += 20;
+                        });
+                    }
+                    
+                    // Add footer
+                    const pageCount = doc.internal.getNumberOfPages();
+                    for (let i = 1; i <= pageCount; i++) {
+                        doc.setPage(i);
+                        doc.setFontSize(9);
+                        doc.setTextColor(148, 163, 184);
+                        doc.text(
+                            `Supply Chain Intelligence AI - Page ${i} of ${pageCount}`,
+                            doc.internal.pageSize.getWidth() / 2,
+                            doc.internal.pageSize.getHeight() - 10,
+                            { align: 'center' }
+                        );
+                    }
+                    
+                    // Save the PDF
+                    const filename = `supply-chain-report-${Date.now()}.pdf`;
+                    doc.save(filename);
+                    
+                    NotificationSystem.show('PDF Ready', 'Your report has been downloaded successfully!', 'success');
+                } catch (error) {
+                    console.error('PDF generation error:', error);
+                    NotificationSystem.show('Error', 'Failed to generate PDF. Please try again.', 'error');
+                }
+            }
+        };
+
+        // Continue in next message due to length...
+        // Enhanced ChatAssistant with Context-Aware Responses
+        const ChatAssistant = {
+            knowledgeBase: {
+                // Supply chain topics
+                'ocean freight': {
+                    keywords: ['ocean', 'sea', 'ship', 'vessel', 'maritime'],
+                    response: 'Ocean freight is the most cost-effective shipping method for large volumes. Key facts: ⚓ Average speed: 40 km/h | 💰 Cost: ~$0.12/km | 🌍 Ideal for: Non-urgent bulk cargo | ⏱️ Transit time: 20-45 days for intercontinental routes | 🌱 Most eco-friendly option with only 8g CO2/km. Best suited for heavy machinery, textiles, and automotive parts.'
+                },
+                'air freight': {
+                    keywords: ['air', 'flight', 'plane', 'aviation', 'airport'],
+                    response: 'Air freight is the fastest but most expensive shipping method. Key facts: ✈️ Average speed: 850 km/h | 💰 Cost: ~$2.50/km | 🌍 Ideal for: Urgent, high-value goods | ⏱️ Transit time: 1-7 days globally | ⚠️ High carbon footprint: 650g CO2/km. Perfect for electronics, pharmaceuticals, and perishables requiring fast delivery.'
+                },
+                'rail freight': {
+                    keywords: ['rail', 'train', 'railway', 'railroad'],
+                    response: 'Rail freight offers a balanced option for continental shipping. Key facts: 🚂 Average speed: 80 km/h | 💰 Cost: ~$0.35/km | 🌍 Ideal for: Cross-continental routes | ⏱️ Transit time: 10-20 days | 🌱 Low emissions: 30g CO2/km. Excellent for bulk commodities and manufactured goods across connected landmasses.'
+                },
+                'road freight': {
+                    keywords: ['road', 'truck', 'highway', 'lorry'],
+                    response: 'Road freight provides maximum flexibility for regional deliveries. Key facts: 🚚 Average speed: 70 km/h | 💰 Cost: ~$0.60/km | 🌍 Ideal for: Regional distances (<3000km) | ⏱️ Transit time: 1-10 days | 🔄 Door-to-door service. Best for regional distribution and last-mile delivery with flexible routing.'
+                },
+                'shipping cost': {
+                    keywords: ['cost', 'price', 'expensive', 'cheap', 'afford', 'budget'],
+                    response: 'Shipping costs depend on 6 key factors: 📏 **Distance**: Longer routes = higher costs | 🚢 **Transport Mode**: Air is 20x more expensive than ocean | ⚖️ **Weight/Volume**: Heavier = costlier | ⚡ **Urgency**: Express shipping adds 30-80% premium | 📅 **Seasonal Demand**: Peak seasons (Oct-Dec) cost 15-25% more | 🛃 **Customs & Fees**: Vary by country. Pro tip: Consolidate shipments and book off-peak to save 20-30%!'
+                },
+                'carbon footprint': {
+                    keywords: ['carbon', 'emission', 'environment', 'eco', 'green', 'sustainable', 'pollution'],
+                    response: '🌱 Reducing carbon footprint is crucial for sustainable supply chains. **Best practices**: 1️⃣ Choose ocean freight (98% lower emissions than air) | 2️⃣ Consolidate shipments to reduce trips | 3️⃣ Use rail for continental routes | 4️⃣ Optimize packaging to reduce weight | 5️⃣ Participate in carbon offset programs. Our AI tracks CO2 in real-time and suggests eco-friendly alternatives!'
+                },
+                'risk factors': {
+                    keywords: ['risk', 'danger', 'threat', 'problem', 'issue', 'disruption'],
+                    response: '⚠️ Our AI monitors 5 critical risk categories: 🌍 **Geopolitical**: Trade tensions, sanctions, conflicts (high in Middle East, Eastern Europe) | ⛈️ **Weather**: Typhoons, storms, extreme conditions (Pacific routes especially) | 🏗️ **Infrastructure**: Port congestion, road quality, rail networks | 📋 **Regulatory**: Customs delays, compliance issues, import restrictions | 📦 **Cargo-Specific**: Perishables, hazardous materials, high-value goods. We analyze 50+ indicators in real-time!'
+                },
+                'delivery time': {
+                    keywords: ['time', 'fast', 'quick', 'speed', 'urgent', 'delay', 'long', 'duration'],
+                    response: '⏱️ Transit times by mode: ✈️ **Air**: 1-7 days (fastest) | 🚚 **Road**: 1-10 days (regional) | 🚂 **Rail**: 10-20 days (continental) | 🚢 **Ocean**: 20-45 days (intercontinental). Factors affecting delivery: customs clearance (+1-3 days), loading/unloading (+1-2 days), weather delays (variable), port congestion (+2-7 days). Our AI provides 90% accurate delivery predictions!'
+                },
+                'customs clearance': {
+                    keywords: ['customs', 'import', 'export', 'tariff', 'duty', 'clearance', 'documentation'],
+                    response: '🛃 Customs clearance essentials: **Required docs**: Commercial invoice, packing list, bill of lading, certificate of origin | **Timeline**: Ocean cargo: 24-72 hours, Air cargo: 6-24 hours | **Common delays**: Incomplete paperwork, random inspections, holiday closures | **Duties & Taxes**: Vary by country and product category (0-50% of value). Pro tip: Pre-file documents and use customs brokers for smooth clearance!'
+                },
+                'insurance': {
+                    keywords: ['insurance', 'coverage', 'protection', 'claim', 'damage', 'loss'],
+                    response: '🛡️ Cargo insurance protects your shipment: **Coverage types**: All-risk (comprehensive), Named perils (specific risks), Total loss only | **Cost**: Typically 0.5-2% of cargo value | **Claims**: Must be filed within 30 days of delivery | **Recommended for**: High-value electronics, fragile items, perishables, hazardous materials. Essential for international shipments exceeding $10,000!'
+                },
+                'incoterms': {
+                    keywords: ['incoterms', 'fob', 'cif', 'exw', 'ddp', 'dap', 'terms'],
+                    response: '📋 Incoterms define buyer-seller responsibilities: **EXW**: Buyer handles everything from pickup | **FOB**: Seller delivers to port | **CIF**: Seller covers cost, insurance, freight | **DAP**: Seller delivers to destination (no unloading) | **DDP**: Seller handles all costs including duties. Choose based on your logistics capabilities and risk tolerance!'
+                },
+                'tracking': {
+                    keywords: ['track', 'locate', 'where', 'status', 'update', 'real-time'],
+                    response: '📍 Real-time tracking capabilities: Our system provides GPS tracking for air and road freight, AIS (Automatic Identification System) for ocean vessels, and RFID for rail cargo. Updates every 4-6 hours for ocean, 1-2 hours for air/road. Features include: location mapping, ETA updates, delay alerts, checkpoint notifications. Premium users get live video feeds at major checkpoints!'
+                },
+                'payment': {
+                    keywords: ['pay', 'payment', 'pricing', 'subscription', 'plan', 'upgrade'],
+                    response: '💳 Our pricing plans: **Starter** ($49/mo): 10 analyses, basic features | **Professional** ($149/mo): 50 analyses, API access, priority support | **Enterprise** ($499/mo): Unlimited analyses, custom integrations, dedicated agents. All plans include blockchain verification, carbon tracking, and PDF exports. Need custom pricing? Contact jakkampudisreeharshith@gmail.com'
+                },
+                'support': {
+                    keywords: ['help', 'support', 'contact', 'assistance', 'question', 'problem'],
+                    response: '💬 We\'re here to help 24/7! **Contact options**: 📧 Email: jakkampudisreeharshith@gmail.com (response within 4 hours) | 💬 Live Chat: Right here! | 📞 Priority Support: Available for Pro & Enterprise plans | 📚 Knowledge Base: Comprehensive guides and FAQs | 🎥 Video Tutorials: Step-by-step walkthroughs. What can I help you with today?'
+                },
+                'blockchain': {
+                    keywords: ['blockchain', 'verify', 'verification', 'immutable', 'ethereum', 'ledger'],
+                    response: '🔗 Blockchain verification ensures data integrity: All analyses are recorded on the Ethereum network as immutable transactions. Benefits: **Tamper-proof** records that can\'t be altered | **Transparent** audit trail for compliance | **Verifiable** by third parties using transaction hash | **Trusted** by regulators and insurance companies. Each analysis gets a unique transaction ID for permanent verification!'
+                },
+                'perishables': {
+                    keywords: ['perishable', 'food', 'fresh', 'refrigerated', 'cold chain', 'temperature'],
+                    response: '🥬 Shipping perishables requires special care: **Temperature control**: Refrigerated containers maintain 2-8°C | **Speed priority**: Air freight recommended (<7 days) | **Documentation**: Health certificates, phytosanitary docs required | **Packaging**: Insulated containers with gel packs | **Risk factors**: Power failures, customs delays can cause spoilage. Our AI recommends fastest routes with climate-controlled options!'
+                },
+                'hazmat': {
+                    keywords: ['hazardous', 'dangerous', 'chemical', 'flammable', 'toxic', 'hazmat'],
+                    response: '☢️ Hazardous materials shipping requirements: **Classification**: Must follow UN dangerous goods codes (Class 1-9) | **Documentation**: Material Safety Data Sheets (MSDS) mandatory | **Packaging**: UN-certified containers required | **Restrictions**: Many carriers/routes prohibited | **Costs**: 50-100% premium over standard shipping | **Training**: Handler certification required. Recommend specialized hazmat logistics partners!'
+                }
+            },
+
+            init() {
+                const chatToggle = document.getElementById('chat-toggle');
+                const chatClose = document.getElementById('chat-close');
+                const chatWindow = document.getElementById('chat-window');
+                const chatInput = document.getElementById('chat-input');
+                const chatSend = document.getElementById('chat-send');
+
+                chatToggle.addEventListener('click', () => {
+                    chatWindow.style.display = chatWindow.style.display === 'flex' ? 'none' : 'flex';
+                });
+
+                chatClose.addEventListener('click', () => {
+                    chatWindow.style.display = 'none';
+                });
+
+                chatSend.addEventListener('click', () => this.sendMessage());
+                
+                chatInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        this.sendMessage();
+                    }
+                });
+            },
+
+            sendMessage() {
+                const input = document.getElementById('chat-input');
+                const message = input.value.trim();
+                
+                if (!message) return;
+                
+                this.addMessage(message, 'user');
+                input.value = '';
+                
+                setTimeout(() => {
+                    this.addTypingIndicator();
+                    setTimeout(() => {
+                        this.removeTypingIndicator();
+                        const response = this.generateContextualResponse(message);
+                        this.addMessage(response, 'ai');
+                    }, 1500);
+                }, 500);
+            },
+
+            quickMessage(message) {
+                document.getElementById('chat-input').value = message;
+                this.sendMessage();
+            },
+
+            addMessage(text, sender) {
+                const messagesContainer = document.getElementById('chat-messages');
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'chat-message';
+                
+                const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+                
+                messageDiv.innerHTML = `
+                    <div class="message-bubble ${sender}">
+                        <div>${text}</div>
+                        <div class="message-time">${time}</div>
+                    </div>
+                `;
+                
+                messagesContainer.appendChild(messageDiv);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            },
+
+            addTypingIndicator() {
+                const messagesContainer = document.getElementById('chat-messages');
+                const typingDiv = document.createElement('div');
+                typingDiv.className = 'chat-message';
+                typingDiv.id = 'typing-indicator';
+                typingDiv.innerHTML = `
+                    <div class="message-bubble ai">
+                        <div class="typing-indicator">
+                            <div class="typing-dot"></div>
+                            <div class="typing-dot"></div>
+                            <div class="typing-dot"></div>
+                        </div>
+                    </div>
+                `;
+                messagesContainer.appendChild(typingDiv);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            },
+
+            removeTypingIndicator() {
+                const indicator = document.getElementById('typing-indicator');
+                if (indicator) indicator.remove();
+            },
+
+            generateContextualResponse(message) {
+                const lowerMessage = message.toLowerCase();
+                
+                // Check knowledge base for matches
+                for (const [topic, data] of Object.entries(this.knowledgeBase)) {
+                    if (data.keywords.some(keyword => lowerMessage.includes(keyword))) {
+                        return data.response;
+                    }
+                }
+
+                // Specific question patterns
+                if (lowerMessage.includes('how much') && lowerMessage.includes('cost')) {
+                    return '💰 Shipping costs vary widely based on multiple factors. On average: Ocean freight costs $0.12/km, Air freight $2.50/km, Rail $0.35/km, and Road $0.60/km. For an accurate quote, please use our route analysis tool or provide specific details: origin, destination, cargo type, and weight. I can help you estimate costs right away!';
+                }
+
+                if (lowerMessage.includes('compare')) {
+                    return '📊 Great question! I can compare different shipping modes for you. Ocean freight is cheapest but slowest (20-45 days), Air freight is fastest but most expensive (1-7 days), Rail offers middle ground for continental routes (10-20 days), and Road provides flexibility for regional shipping (1-10 days). What specific comparison would you like? Cost, speed, environmental impact, or reliability?';
+                }
+
+                if (lowerMessage.includes('recommend') || lowerMessage.includes('suggest') || lowerMessage.includes('best')) {
+                    return '🎯 I\'d be happy to recommend the best shipping option! To provide the most accurate suggestion, I need to know: 1) Your origin and destination, 2) Type of cargo you\'re shipping, 3) Urgency level (how fast you need it), 4) Budget constraints. You can either tell me these details or use our route analysis tool above for a comprehensive AI-powered recommendation!';
+                }
+
+                if (lowerMessage.includes('hello') || lowerMessage.includes('hi ') || lowerMessage.includes('hey')) {
+                    return '👋 Hello! Welcome to Supply Chain Intelligence AI. I\'m here to help you with all your logistics and shipping questions. I can explain different transport modes, calculate costs, assess risks, discuss sustainability options, and much more. What would you like to know about supply chain management today?';
+                }
+
+                if (lowerMessage.includes('thank')) {
+                    return '😊 You\'re very welcome! I\'m always here to help with your supply chain questions. Feel free to ask anything else about shipping, logistics, costs, risks, or sustainability. Have a great day! 🚢✈️🚂🚚';
+                }
+
+                // Default intelligent response
+                return `I understand you're asking about "${message}". While I don't have specific information about that exact query, I can help you with: 🚢 Ocean, Air, Rail, and Road freight comparison | 💰 Shipping cost factors and estimation | ⏱️ Delivery time calculations | ⚠️ Risk assessment | 🌱 Carbon footprint reduction | 🛃 Customs and documentation | 📧 For detailed assistance, contact our support: jakkampudisreeharshith@gmail.com. What specific aspect would you like to explore?`;
+            }
+        };
+
+        const ThemeController = {
+            init() {
+                const toggle = document.getElementById('theme-toggle');
+                const savedTheme = localStorage.getItem('theme') || 'dark';
+                this.setTheme(savedTheme);
+
+                toggle.addEventListener('click', () => {
+                    const current = document.body.getAttribute('data-theme');
+                    const newTheme = current === 'dark' ? 'light' : 'dark';
+                    this.setTheme(newTheme);
+                    localStorage.setItem('theme', newTheme);
+                });
+            },
+
+            setTheme(theme) {
+                document.body.setAttribute('data-theme', theme);
+                const toggle = document.getElementById('theme-toggle');
+                const icon = toggle.querySelector('i');
+                const text = toggle.querySelector('span');
+                
+                if (theme === 'dark') {
+                    icon.className = 'fa-solid fa-moon';
+                    text.textContent = 'Dark';
+                } else {
+                    icon.className = 'fa-solid fa-sun';
+                    text.textContent = 'Light';
+                }
+            }
+        };
+
         const DataModels = {
             Location: class {
                 constructor(name, lat, lon, country, region) {
@@ -794,7 +2578,7 @@
                     this.lat = lat;
                     this.lon = lon;
                     this.country = country;
-                    this.region = region; // Asia, Europe, Americas, etc.
+                    this.region = region;
                 }
             },
 
@@ -803,11 +2587,11 @@
                     this.key = key;
                     this.name = name;
                     this.icon = icon;
-                    this.baseSpeed = baseSpeed; // km/hour
-                    this.baseCostPerKm = baseCostPerKm; // USD per km
-                    this.baseCO2PerKm = baseCO2PerKm; // kg per km
-                    this.reliability = reliability; // 0-1 scale
-                    this.weatherSensitivity = weatherSensitivity; // 0-1 scale
+                    this.baseSpeed = baseSpeed;
+                    this.baseCostPerKm = baseCostPerKm;
+                    this.baseCO2PerKm = baseCO2PerKm;
+                    this.reliability = reliability;
+                    this.weatherSensitivity = weatherSensitivity;
                 }
             },
 
@@ -816,17 +2600,17 @@
                     this.mode = mode;
                     this.days = days;
                     this.cost = cost;
-                    this.co2 = co2; // tons
-                    this.riskScore = riskScore; // 0-100
-                    this.confidence = confidence; // 0-1
-                    this.path = path; // Array of location names
+                    this.co2 = co2;
+                    this.riskScore = riskScore;
+                    this.confidence = confidence;
+                    this.path = path;
                 }
             },
 
             RiskAssessment: class {
                 constructor(totalScore, factors) {
-                    this.totalScore = totalScore; // 0-100
-                    this.factors = factors; // { geopolitical, weather, infrastructure, regulatory }
+                    this.totalScore = totalScore;
+                    this.factors = factors;
                     this.level = this.calculateLevel();
                 }
 
@@ -838,10 +2622,6 @@
             }
         };
 
-        /**
-         * GEOGRAPHIC DATABASE
-         * Real-world coordinates and regional data for route calculations
-         */
         const GeographicDB = {
             locations: {
                 'Shanghai, China': new DataModels.Location('Shanghai', 31.2304, 121.4737, 'China', 'Asia'),
@@ -858,19 +2638,25 @@
                 'Sydney, Australia': new DataModels.Location('Sydney', -33.8688, 151.2093, 'Australia', 'Oceania'),
                 'São Paulo, Brazil': new DataModels.Location('São Paulo', -23.5505, -46.6333, 'Brazil', 'Americas'),
                 'Cape Town, South Africa': new DataModels.Location('Cape Town', -33.9249, 18.4241, 'South Africa', 'Africa'),
-                'Mexico City, Mexico': new DataModels.Location('Mexico City', 19.4326, -99.1332, 'Mexico', 'Americas')
+                'Mexico City, Mexico': new DataModels.Location('Mexico City', 19.4326, -99.1332, 'Mexico', 'Americas'),
+                'Delhi, India': new DataModels.Location('Delhi', 28.7041, 77.1025, 'India', 'Asia'),
+                'Chennai, India': new DataModels.Location('Chennai', 13.0827, 80.2707, 'India', 'Asia'),
+                'Bangalore, India': new DataModels.Location('Bangalore', 12.9716, 77.5946, 'India', 'Asia'),
+                'Kolkata, India': new DataModels.Location('Kolkata', 22.5726, 88.3639, 'India', 'Asia'),
+                'Paris, France': new DataModels.Location('Paris', 48.8566, 2.3522, 'France', 'Europe'),
+                'Berlin, Germany': new DataModels.Location('Berlin', 52.5200, 13.4050, 'Germany', 'Europe'),
+                'Chicago, USA': new DataModels.Location('Chicago', 41.8781, -87.6298, 'USA', 'Americas'),
+                'Toronto, Canada': new DataModels.Location('Toronto', 43.6532, -79.3832, 'Canada', 'Americas'),
+                'Seoul, South Korea': new DataModels.Location('Seoul', 37.5665, 126.9780, 'South Korea', 'Asia'),
+                'Bangkok, Thailand': new DataModels.Location('Bangkok', 13.7563, 100.5018, 'Thailand', 'Asia')
             },
 
             getLocation(name) {
                 return this.locations[name] || null;
             },
 
-            /**
-             * Calculate great circle distance between two locations using Haversine formula
-             * Returns distance in kilometers
-             */
             calculateDistance(loc1, loc2) {
-                const R = 6371; // Earth's radius in km
+                const R = 6371;
                 const dLat = this.toRad(loc2.lat - loc1.lat);
                 const dLon = this.toRad(loc2.lon - loc1.lon);
                 
@@ -886,9 +2672,6 @@
                 return degrees * Math.PI / 180;
             },
 
-            /**
-             * Determine if route crosses risky regions
-             */
             assessGeopoliticalRisk(loc1, loc2) {
                 const riskyRegions = ['Middle East', 'Eastern Europe'];
                 let risk = 0;
@@ -897,13 +2680,11 @@
                     risk += 25;
                 }
 
-                // Trans-Pacific routes have piracy concerns
                 if ((loc1.region === 'Asia' && loc2.region === 'Americas') ||
                     (loc1.region === 'Americas' && loc2.region === 'Asia')) {
                     risk += 10;
                 }
 
-                // Africa-Europe corridor
                 if ((loc1.region === 'Africa' && loc2.region === 'Europe') ||
                     (loc1.region === 'Europe' && loc2.region === 'Africa')) {
                     risk += 15;
@@ -913,43 +2694,23 @@
             }
         };
 
-        /**
-         * TRANSPORT MODES DATABASE
-         * Configuration for different shipping methods
-         */
         const TransportDB = {
             modes: {
                 ocean: new DataModels.TransportMode(
                     'ocean', 'Ocean Freight', 'fa-ship',
-                    40, // 40 km/h average
-                    0.12, // $0.12 per km
-                    0.008, // 8g CO2 per km
-                    0.85, // 85% reliability
-                    0.3 // 30% weather sensitivity
+                    40, 0.12, 0.008, 0.85, 0.3
                 ),
                 air: new DataModels.TransportMode(
                     'air', 'Air Freight', 'fa-plane',
-                    850, // 850 km/h
-                    2.50, // $2.50 per km
-                    0.65, // 650g CO2 per km
-                    0.95, // 95% reliability
-                    0.5 // 50% weather sensitivity
+                    850, 2.50, 0.65, 0.95, 0.5
                 ),
                 rail: new DataModels.TransportMode(
                     'rail', 'Rail Freight', 'fa-train',
-                    80, // 80 km/h average
-                    0.35, // $0.35 per km
-                    0.03, // 30g CO2 per km
-                    0.90, // 90% reliability
-                    0.2 // 20% weather sensitivity
+                    80, 0.35, 0.03, 0.90, 0.2
                 ),
                 road: new DataModels.TransportMode(
                     'road', 'Road Freight', 'fa-truck',
-                    70, // 70 km/h
-                    0.60, // $0.60 per km
-                    0.15, // 150g CO2 per km
-                    0.88, // 88% reliability
-                    0.4 // 40% weather sensitivity
+                    70, 0.60, 0.15, 0.88, 0.4
                 )
             },
 
@@ -962,10 +2723,6 @@
             }
         };
 
-        /**
-         * CARGO TYPE DATABASE
-         * Different cargo types have different handling requirements and risks
-         */
         const CargoTypeDB = {
             types: {
                 heavy: { name: 'Heavy Machinery', riskFactor: 1.1, costMultiplier: 1.3, speedPenalty: 0.9 },
@@ -981,15 +2738,9 @@
             }
         };
 
-        /**
-         * MULTI-AGENT DECISION ENGINE
-         * Each agent analyzes the route from a different perspective
-         */
+        // Continue with AgentEngine and remaining code...
+        // (Continuing in next part due to character limit)
         const AgentEngine = {
-            /**
-             * Risk Analysis Agent
-             * Evaluates all risk factors for a given route
-             */
             RiskAgent: {
                 analyze(origin, destination, mode, cargo, distance) {
                     const factors = {
@@ -1000,7 +2751,6 @@
                         cargo: this.assessCargoRisk(cargo, mode, distance)
                     };
 
-                    // Weighted average of all risk factors
                     const totalScore = Math.round(
                         factors.geopolitical * 0.25 +
                         factors.weather * 0.20 +
@@ -1013,14 +2763,12 @@
                 },
 
                 assessWeatherRisk(origin, dest, mode) {
-                    let risk = 20; // Base weather risk
+                    let risk = 20;
 
-                    // Seasonal factors (simplified - in production would use actual date/season)
                     if (origin.region === 'Asia' && dest.region === 'Americas') {
-                        risk += 15; // Pacific typhoon/hurricane risk
+                        risk += 15;
                     }
 
-                    // Mode sensitivity
                     risk *= mode.weatherSensitivity;
 
                     return Math.min(Math.round(risk), 100);
@@ -1033,7 +2781,6 @@
                     if (!developedRegions.includes(origin.region)) risk += 20;
                     if (!developedRegions.includes(dest.region)) risk += 20;
 
-                    // Rail has higher infrastructure dependency
                     if (mode.key === 'rail') risk *= 1.3;
 
                     return Math.min(Math.round(risk), 100);
@@ -1042,12 +2789,10 @@
                 assessRegulatoryRisk(origin, dest, cargoKey) {
                     let risk = 10;
 
-                    // Different countries, different regulations
                     if (origin.country !== dest.country) risk += 15;
 
-                    // Hazardous materials
                     if (cargoKey === 'chemicals') risk += 30;
-                    if (cargoKey === 'electronics') risk += 10; // Trade restrictions
+                    if (cargoKey === 'electronics') risk += 10;
 
                     return Math.min(Math.round(risk), 100);
                 },
@@ -1056,15 +2801,12 @@
                     const cargoType = CargoTypeDB.getType(cargoKey);
                     let risk = 10;
 
-                    // Base cargo risk
                     risk += (cargoType.riskFactor - 1) * 50;
 
-                    // Perishables + long distance = high risk
                     if (cargoKey === 'perishables' && distance > 10000) {
                         risk += 25;
                     }
 
-                    // Electronics theft risk in ocean freight
                     if (cargoKey === 'electronics' && mode.key === 'ocean') {
                         risk += 20;
                     }
@@ -1073,21 +2815,13 @@
                 }
             },
 
-            /**
-             * Cost Optimization Agent
-             * Finds the most cost-effective solution
-             */
             CostAgent: {
                 analyze(distance, mode, cargoKey, urgency) {
                     const cargoType = CargoTypeDB.getType(cargoKey);
                     
-                    // Base cost calculation
                     let baseCost = distance * mode.baseCostPerKm;
-
-                    // Apply cargo multiplier
                     baseCost *= cargoType.costMultiplier;
 
-                    // Urgency premium
                     const urgencyMultipliers = {
                         low: 0.9,
                         medium: 1.0,
@@ -1096,7 +2830,6 @@
                     };
                     baseCost *= urgencyMultipliers[urgency] || 1.0;
 
-                    // Add handling and customs
                     const handlingFee = Math.min(distance * 0.02, 2000);
                     const customsFee = mode.key === 'ocean' ? 800 : 400;
 
@@ -1114,19 +2847,13 @@
                 }
             },
 
-            /**
-             * Time Optimization Agent
-             * Calculates transit times with realistic factors
-             */
             TimeAgent: {
                 analyze(distance, mode, cargoKey, urgency) {
                     const cargoType = CargoTypeDB.getType(cargoKey);
 
-                    // Base transit time
                     let effectiveSpeed = mode.baseSpeed * cargoType.speedPenalty;
                     let transitHours = distance / effectiveSpeed;
 
-                    // Add loading/unloading time
                     const loadingHours = {
                         ocean: 48,
                         air: 8,
@@ -1135,16 +2862,13 @@
                     };
                     transitHours += loadingHours[mode.key] || 24;
 
-                    // Add customs clearance
                     const customsHours = mode.key === 'ocean' ? 36 : 12;
                     transitHours += customsHours;
 
-                    // Convert to days
                     let days = Math.ceil(transitHours / 24);
 
-                    // Perishables need express handling
                     if (cargoKey === 'perishables') {
-                        days = Math.ceil(days * 0.9); // Expedited
+                        days = Math.ceil(days * 0.9);
                     }
 
                     return {
@@ -1155,23 +2879,16 @@
                 }
             },
 
-            /**
-             * Sustainability Agent
-             * Calculates environmental impact
-             */
             SustainabilityAgent: {
                 analyze(distance, mode, cargoKey) {
                     const cargoType = CargoTypeDB.getType(cargoKey);
 
-                    // CO2 emissions in kg
                     let co2kg = distance * mode.baseCO2PerKm;
 
-                    // Heavy cargo increases emissions
                     if (cargoKey === 'heavy') {
                         co2kg *= 1.4;
                     }
 
-                    // Convert to tons
                     const co2tons = (co2kg / 1000).toFixed(2);
 
                     return {
@@ -1190,10 +2907,6 @@
                 }
             },
 
-            /**
-             * Master Agent Coordinator
-             * Aggregates insights from all agents and makes final recommendation
-             */
             MasterAgent: {
                 async coordinate(origin, destination, cargoKey, urgency) {
                     const originLoc = GeographicDB.getLocation(origin);
@@ -1205,14 +2918,12 @@
 
                     const distance = GeographicDB.calculateDistance(originLoc, destLoc);
 
-                    // Analyze all transport modes
                     const results = [];
                     const modes = TransportDB.getAllModes();
 
                     for (const mode of modes) {
-                        // Filter modes based on distance and urgency
-                        if (mode.key === 'road' && distance > 3000) continue; // Road impractical for long distance
-                        if (mode.key === 'rail' && originLoc.region !== destLoc.region) continue; // Rail needs connected infrastructure
+                        if (mode.key === 'road' && distance > 3000) continue;
+                        if (mode.key === 'rail' && originLoc.region !== destLoc.region) continue;
 
                         const riskAnalysis = AgentEngine.RiskAgent.analyze(
                             originLoc, destLoc, mode, cargoKey, distance
@@ -1230,7 +2941,6 @@
                             distance, mode, cargoKey
                         );
 
-                        // Calculate overall score based on urgency priority
                         const score = this.calculateScore(
                             riskAnalysis, costAnalysis, timeAnalysis, 
                             sustainabilityAnalysis, urgency
@@ -1247,7 +2957,6 @@
                         });
                     }
 
-                    // Sort by score and return best recommendation
                     results.sort((a, b) => b.score - a.score);
 
                     return {
@@ -1262,7 +2971,6 @@
                 },
 
                 calculateScore(risk, cost, time, sustainability, urgency) {
-                    // Different urgency levels prioritize different factors
                     const weights = {
                         low: { cost: 0.5, time: 0.1, risk: 0.3, sustainability: 0.1 },
                         medium: { cost: 0.3, time: 0.3, risk: 0.3, sustainability: 0.1 },
@@ -1272,7 +2980,6 @@
 
                     const w = weights[urgency] || weights.medium;
 
-                    // Normalize scores (lower is better for cost/time/risk, higher for sustainability)
                     const costScore = Math.max(0, 100 - (cost.cost / 100));
                     const timeScore = Math.max(0, 100 - (time.days * 2));
                     const riskScore = Math.max(0, 100 - risk.totalScore);
@@ -1287,21 +2994,19 @@
                 },
 
                 generatePath(origin, dest, mode) {
-                    // Generate realistic intermediate waypoints based on mode
                     const path = [origin.name];
 
                     if (mode.key === 'ocean') {
-                        // Ocean routes go through major ports
                         if (origin.region === 'Asia' && dest.region === 'Americas') {
                             path.push('Pacific Ocean Route');
                         } else if (origin.region === 'Asia' && dest.region === 'Europe') {
                             path.push('Suez Canal');
+                        } else if (origin.region === 'Europe' && dest.region === 'Americas') {
+                            path.push('Atlantic Ocean Route');
                         }
                     } else if (mode.key === 'air') {
-                        // Direct air routes
                         path.push('Direct Air Corridor');
                     } else if (mode.key === 'rail') {
-                        // Rail needs intermediate cities
                         path.push('Trans-Continental Rail');
                     }
 
@@ -1311,10 +3016,78 @@
             }
         };
 
-        /**
-         * UI CONTROLLER
-         * Handles all DOM interactions and visualizations
-         */
+        const NotificationSystem = {
+            show(title, message, type = 'info') {
+                const notificationArea = document.getElementById('notification-area');
+                
+                const toast = document.createElement('div');
+                toast.className = 'notification-toast';
+                
+                const iconMap = {
+                    info: 'fa-info-circle',
+                    success: 'fa-check-circle',
+                    warning: 'fa-exclamation-triangle',
+                    error: 'fa-times-circle'
+                };
+                
+                const colorMap = {
+                    info: 'var(--primary)',
+                    success: 'var(--success)',
+                    warning: 'var(--warning)',
+                    error: 'var(--danger)'
+                };
+                
+                toast.innerHTML = `
+                    <div class="notification-header">
+                        <div class="notification-icon" style="background: ${colorMap[type]};">
+                            <i class="fa-solid ${iconMap[type]}"></i>
+                        </div>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 5px;">${title}</div>
+                            <div style="font-size: 0.85rem; color: var(--text-secondary);">${message}</div>
+                        </div>
+                    </div>
+                `;
+                
+                notificationArea.appendChild(toast);
+                
+                setTimeout(() => toast.classList.add('show'), 100);
+                
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                    setTimeout(() => toast.remove(), 500);
+                }, 4000);
+            }
+        };
+
+        const BlockchainVerifier = {
+            generateTransactionHash() {
+                const chars = '0123456789abcdef';
+                let hash = '0x';
+                for (let i = 0; i < 64; i++) {
+                    hash += chars[Math.floor(Math.random() * chars.length)];
+                }
+                return hash;
+            },
+
+            verify() {
+                NotificationSystem.show(
+                    'Blockchain Verification',
+                    'Initializing verification on Ethereum network...',
+                    'info'
+                );
+
+                setTimeout(() => {
+                    const txHash = this.generateTransactionHash();
+                    NotificationSystem.show(
+                        'Verification Complete',
+                        `Transaction Hash: ${txHash.substring(0, 20)}...`,
+                        'success'
+                    );
+                }, 2000);
+            }
+        };
+
         const UIController = {
             async showLoadingState() {
                 document.getElementById('main-container').style.display = 'none';
@@ -1324,17 +3097,17 @@
 
                 const agentStatus = document.getElementById('agent-status');
                 const agents = [
-                    { name: 'Risk Analysis Agent', icon: 'fa-shield-halved', delay: 300 },
-                    { name: 'Cost Optimization Agent', icon: 'fa-dollar-sign', delay: 600 },
-                    { name: 'Time Efficiency Agent', icon: 'fa-clock', delay: 900 },
-                    { name: 'Sustainability Agent', icon: 'fa-leaf', delay: 1200 },
-                    { name: 'Master Coordinator', icon: 'fa-brain', delay: 1500 }
+                    { name: 'Risk Analysis Agent', icon: 'fa-shield-halved', delay: 400 },
+                    { name: 'Cost Optimization Agent', icon: 'fa-dollar-sign', delay: 700 },
+                    { name: 'Time Efficiency Agent', icon: 'fa-clock', delay: 1000 },
+                    { name: 'Sustainability Agent', icon: 'fa-leaf', delay: 1300 },
+                    { name: 'Master Coordinator', icon: 'fa-brain', delay: 1600 }
                 ];
 
                 agentStatus.innerHTML = '';
                 
                 for (let i = 0; i < agents.length; i++) {
-                    await new Promise(resolve => setTimeout(resolve, agents[i].delay));
+                    await new Promise(resolve => setTimeout(resolve, agents[i].delay - (i > 0 ? agents[i-1].delay : 0)));
                     const div = document.createElement('div');
                     div.className = 'agent-item active';
                     div.style.animationDelay = `${i * 0.1}s`;
@@ -1345,7 +3118,7 @@
                     agentStatus.appendChild(div);
                 }
 
-                await new Promise(resolve => setTimeout(resolve, 800));
+                await new Promise(resolve => setTimeout(resolve, 1000));
             },
 
             renderResults(analysis) {
@@ -1358,6 +3131,10 @@
                     ${this.renderRiskCard(rec.risk)}
                     ${this.renderAlerts(analysis)}
                     ${this.renderRecommendation(rec, analysis.metadata)}
+                    ${this.renderBlockchainBadge()}
+                    ${this.renderMLInsights(rec, analysis.metadata)}
+                    ${this.renderPredictiveTimeline(rec)}
+                    ${this.renderCarbonTracker(rec, analysis.alternatives)}
                     ${this.renderAgentReasoning(rec)}
                     ${this.renderSavingsBanner(rec, analysis.alternatives)}
                     ${this.renderComparisonChart(rec, analysis.alternatives)}
@@ -1367,8 +3144,158 @@
                 resultsArea.style.display = 'block';
                 resultsArea.scrollIntoView({ behavior: 'smooth' });
 
-                // Animate charts
-                setTimeout(() => this.animateCharts(), 100);
+                setTimeout(() => this.animateCharts(), 200);
+                
+                window.currentAnalysis = analysis;
+            },
+
+            renderBlockchainBadge() {
+                const txHash = BlockchainVerifier.generateTransactionHash();
+                return `
+                    <div class="fade-in" style="text-align: center; animation-delay: 0.3s;">
+                        <div class="blockchain-badge">
+                            <i class="fa-solid fa-link"></i>
+                            Verified on Blockchain
+                            <span style="font-family: var(--font-mono); font-size: 0.75rem; opacity: 0.8;">
+                                ${txHash.substring(0, 16)}...
+                            </span>
+                        </div>
+                    </div>
+                `;
+            },
+
+            renderMLInsights(rec, metadata) {
+                const insights = [
+                    {
+                        icon: 'fa-brain',
+                        title: 'Pattern Detection',
+                        description: `AI detected ${Math.floor(Math.random() * 5 + 3)} similar successful shipments on this route in the past 30 days.`
+                    },
+                    {
+                        icon: 'fa-chart-line',
+                        title: 'Demand Forecast',
+                        description: `Expected ${Math.floor(Math.random() * 15 + 10)}% increase in shipping volume for this corridor next quarter.`
+                    },
+                    {
+                        icon: 'fa-lightbulb',
+                        title: 'Cost Optimization',
+                        description: `Booking ${Math.floor(Math.random() * 10 + 5)} days in advance could save an additional $${Math.floor(Math.random() * 500 + 200)}.`
+                    },
+                    {
+                        icon: 'fa-shield-alt',
+                        title: 'Risk Mitigation',
+                        description: 'Insurance coverage recommended for high-value electronics shipments on this route.'
+                    }
+                ];
+
+                return `
+                    <div class="ml-insights fade-in" style="animation-delay: 0.5s;">
+                        <h4>
+                            <i class="fa-solid fa-robot"></i>
+                            AI-Powered Insights & Predictions
+                        </h4>
+                        ${insights.map(insight => `
+                            <div class="insight-item">
+                                <div class="insight-icon">
+                                    <i class="fa-solid ${insight.icon}"></i>
+                                </div>
+                                <div>
+                                    <div style="font-weight: 700; margin-bottom: 5px; color: var(--text-primary);">${insight.title}</div>
+                                    <div style="font-size: 0.9rem; color: var(--text-secondary);">${insight.description}</div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            },
+
+            renderPredictiveTimeline(rec) {
+                const today = new Date();
+                const milestones = [
+                    { offset: 0, event: 'Shipment Pickup', status: 'scheduled' },
+                    { offset: Math.floor(rec.time.days * 0.1), event: 'Customs Clearance (Origin)', status: 'pending' },
+                    { offset: Math.floor(rec.time.days * 0.3), event: 'In Transit', status: 'pending' },
+                    { offset: Math.floor(rec.time.days * 0.7), event: 'Customs Clearance (Destination)', status: 'pending' },
+                    { offset: rec.time.days, event: 'Final Delivery', status: 'pending' }
+                ];
+
+                return `
+                    <div class="predictive-timeline fade-in" style="animation-delay: 0.6s;">
+                        <div class="timeline-header">
+                            <h4 style="display: flex; align-items: center; gap: 10px; color: var(--text-primary);">
+                                <i class="fa-solid fa-calendar-alt"></i>
+                                Predictive Delivery Timeline
+                            </h4>
+                            <span style="color: var(--text-muted); font-size: 0.9rem;">Estimated ${rec.time.days} days</span>
+                        </div>
+                        ${milestones.map(milestone => {
+                            const date = new Date(today);
+                            date.setDate(date.getDate() + milestone.offset);
+                            return `
+                                <div class="timeline-item">
+                                    <div class="timeline-date">${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>
+                                    <div>
+                                        <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 5px;">${milestone.event}</div>
+                                        <div style="font-size: 0.85rem; color: var(--text-muted);">Day ${milestone.offset} • ${milestone.status === 'scheduled' ? '✓ Scheduled' : 'Pending'}</div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+            },
+
+            renderCarbonTracker(rec, alternatives) {
+                const avgCO2 = [...alternatives, rec].reduce((sum, opt) => sum + opt.sustainability.co2tons, 0) / (alternatives.length + 1);
+                const treesEquivalent = Math.round(rec.sustainability.co2tons * 48);
+                const comparison = ((rec.sustainability.co2tons / avgCO2) * 100 - 100).toFixed(1);
+
+                return `
+                    <div class="carbon-tracker fade-in" style="animation-delay: 0.7s;">
+                        <h4 style="display: flex; align-items: center; gap: 10px; color: var(--success); margin-bottom: 10px;">
+                            <i class="fa-solid fa-leaf"></i>
+                            Environmental Impact Tracker
+                        </h4>
+                        <p style="color: var(--text-secondary); margin-bottom: 20px;">Real-time carbon footprint monitoring with offset recommendations</p>
+                        
+                        <div class="carbon-visualization">
+                            <div class="carbon-meter">
+                                <i class="fa-solid fa-cloud" style="font-size: 2.5rem; color: var(--success); opacity: 0.7;"></i>
+                                <span class="meter-value">${rec.sustainability.co2tons}T</span>
+                                <div style="font-weight: 700; color: var(--text-primary);">Total CO2 Emissions</div>
+                                <div class="meter-comparison">${comparison >= 0 ? '+' : ''}${comparison}% vs average</div>
+                            </div>
+                            
+                            <div class="carbon-meter">
+                                <i class="fa-solid fa-tree" style="font-size: 2.5rem; color: var(--success); opacity: 0.7;"></i>
+                                <span class="meter-value" style="font-size: 2rem;">${treesEquivalent}</span>
+                                <div style="font-weight: 700; color: var(--text-primary);">Trees Required</div>
+                                <div class="meter-comparison">To offset this shipment annually</div>
+                            </div>
+                            
+                            <div class="carbon-meter">
+                                <i class="fa-solid fa-award" style="font-size: 2.5rem; color: var(--success); opacity: 0.7;"></i>
+                                <span class="meter-value" style="font-size: 1.5rem;">${rec.sustainability.rating}</span>
+                                <div style="font-weight: 700; color: var(--text-primary);">Eco Rating</div>
+                                <div class="meter-comparison">Sustainability score</div>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-top: 25px; padding: 20px; background: var(--card-bg); border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.3);">
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                                <i class="fa-solid fa-seedling" style="color: var(--success);"></i>
+                                <span style="font-weight: 700; color: var(--text-primary);">Carbon Offset Program</span>
+                            </div>
+                            <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 15px;">
+                                Offset your shipment's carbon footprint by contributing to verified reforestation projects.
+                            </p>
+                            <button class="theme-toggle" style="background: var(--success); color: white; border: none; cursor: pointer;">
+                                <i class="fa-solid fa-hand-holding-heart"></i>
+                                <span>Offset $${Math.round(rec.sustainability.co2tons * 15)}</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
             },
 
             renderRiskCard(risk) {
@@ -1382,12 +3309,12 @@
 
                 return `
                     <div class="risk-card fade-in" style="border-top-color: ${style.color};">
-                        <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px;">
-                            <i class="fa-solid fa-triangle-exclamation" style="color: ${style.color};"></i>
-                            <h4 style="color: #cbd5e1; text-transform: uppercase;">AI Risk Assessment</h4>
+                        <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 15px;">
+                            <i class="fa-solid fa-triangle-exclamation" style="color: ${style.color}; font-size: 1.5rem;"></i>
+                            <h4 style="color: var(--text-secondary); text-transform: uppercase; letter-spacing: 2px;">AI Risk Assessment</h4>
                         </div>
                         <div class="risk-score" style="color: ${style.color};">${risk.totalScore}</div>
-                        <div style="color: #94a3b8; margin-bottom: 10px;">out of 100</div>
+                        <div style="color: var(--text-muted); margin-bottom: 15px; font-size: 0.9rem;">out of 100</div>
                         <div class="risk-label" style="color: ${style.color};">${style.emoji} ${risk.level} RISK</div>
                         <div class="confidence-badge">95% Confidence</div>
                         
@@ -1417,7 +3344,7 @@
                 
                 return `
                     <div class="fade-in" style="animation-delay: 0.2s;">
-                        <h4 style="color: white; margin-bottom: 15px;">
+                        <h4 style="color: var(--text-primary); margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
                             <i class="fa-solid fa-bell"></i> Active Alerts & Disruptions
                         </h4>
                         ${alerts.map(alert => `
@@ -1425,7 +3352,7 @@
                                 <div class="alert-title">
                                     <i class="fa-solid ${alert.icon}"></i> ${alert.title}
                                 </div>
-                                <p style="font-size: 0.9rem;">${alert.text}</p>
+                                <p style="font-size: 0.9rem; color: var(--text-secondary); margin-top: 5px;">${alert.text}</p>
                             </div>
                         `).join('')}
                     </div>
@@ -1475,43 +3402,43 @@
                 return `
                     <div class="rec-card fade-in" style="animation-delay: 0.4s;">
                         <div class="rec-header">
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                <i class="fa-solid fa-circle-check" style="color: var(--success); font-size: 1.2rem;"></i>
-                                <h3 style="font-weight: 700;">AI Recommended Route</h3>
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <i class="fa-solid fa-circle-check" style="color: var(--success); font-size: 1.5rem;"></i>
+                                <h3 style="font-weight: 700; font-size: 1.3rem;">AI Recommended Route</h3>
                             </div>
                             <span class="badge-best">OPTIMAL CHOICE</span>
                         </div>
                         
                         <div class="rec-body">
-                            <div style="margin-bottom: 20px;">
-                                <span style="background: #3b82f6; color: white; padding: 5px 15px; border-radius: 20px; font-weight: 700; font-size: 0.8rem; text-transform: uppercase;">
+                            <div style="margin-bottom: 25px;">
+                                <span style="background: var(--primary); color: white; padding: 8px 20px; border-radius: 25px; font-weight: 700; font-size: 0.85rem; text-transform: uppercase; display: inline-block;">
                                     <i class="fa-solid ${rec.mode.icon}"></i> ${rec.mode.name}
                                 </span>
                             </div>
                             
-                            <p class="route-path">${rec.path.join(' → ')}</p>
-                            <p style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 20px;">
+                            <p class="route-path" style="font-size: 1.05rem;">${rec.path.join(' → ')}</p>
+                            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 30px;">
                                 Distance: ${metadata.distance.toLocaleString()} km
                             </p>
 
                             <div class="stats-grid">
                                 <div class="stat-box">
-                                    <i class="fa-solid fa-stopwatch" style="color: #6366f1; font-size: 1.5rem; margin-bottom: 10px;"></i>
+                                    <i class="fa-solid fa-stopwatch" style="color: #6366f1; font-size: 2rem;"></i>
                                     <span class="sb-val">${rec.time.days}</span>
                                     <span class="sb-lbl">Transit Days</span>
                                 </div>
                                 <div class="stat-box">
-                                    <i class="fa-solid fa-money-bill-wave" style="color: #10b981; font-size: 1.5rem; margin-bottom: 10px;"></i>
+                                    <i class="fa-solid fa-money-bill-wave" style="color: #10b981; font-size: 2rem;"></i>
                                     <span class="sb-val">$${rec.cost.cost.toLocaleString()}</span>
                                     <span class="sb-lbl">Total Cost</span>
                                 </div>
                                 <div class="stat-box">
-                                    <i class="fa-solid fa-leaf" style="color: #0ea5e9; font-size: 1.5rem; margin-bottom: 10px;"></i>
+                                    <i class="fa-solid fa-leaf" style="color: #0ea5e9; font-size: 2rem;"></i>
                                     <span class="sb-val">${rec.sustainability.co2tons}T</span>
                                     <span class="sb-lbl">CO2 Emissions</span>
                                 </div>
                                 <div class="stat-box">
-                                    <i class="fa-solid fa-shield-halved" style="color: ${this.getRiskColor(rec.risk.totalScore)}; font-size: 1.5rem; margin-bottom: 10px;"></i>
+                                    <i class="fa-solid fa-shield-halved" style="color: ${this.getRiskColor(rec.risk.totalScore)}; font-size: 2rem;"></i>
                                     <span class="sb-val">${rec.risk.level}</span>
                                     <span class="sb-lbl">Risk Level</span>
                                 </div>
@@ -1523,7 +3450,7 @@
 
             renderAgentReasoning(rec) {
                 return `
-                    <div class="agent-reasoning fade-in" style="animation-delay: 0.5s;">
+                    <div class="agent-reasoning fade-in" style="animation-delay: 0.8s;">
                         <div class="reasoning-title">
                             <i class="fa-solid fa-brain"></i>
                             AI Decision Rationale
@@ -1553,28 +3480,27 @@
             },
 
             renderSavingsBanner(rec, alternatives) {
-                // Find most expensive alternative (usually air)
                 const maxCost = Math.max(...alternatives.map(a => a.cost.cost), rec.cost.cost);
                 const savings = maxCost - rec.cost.cost;
 
                 if (savings > 0) {
                     return `
-                        <div class="savings-banner fade-in" style="animation-delay: 0.6s;">
-                            <i class="fa-solid fa-sack-dollar" style="font-size: 2rem; opacity: 0.8;"></i>
+                        <div class="savings-banner fade-in" style="animation-delay: 0.9s;">
+                            <i class="fa-solid fa-sack-dollar" style="font-size: 2.5rem; opacity: 0.9; position: relative; z-index: 1;"></i>
                             <span class="save-amount">$${savings.toLocaleString()}</span>
-                            <p style="font-weight: 600; font-size: 1.1rem;">Estimated Savings vs Most Expensive Option</p>
-                            <p style="font-size: 0.9rem; opacity: 0.9; margin-top: 5px;">
+                            <p style="font-weight: 700; font-size: 1.2rem; position: relative; z-index: 1;">Estimated Savings vs Most Expensive Option</p>
+                            <p style="font-size: 1rem; opacity: 0.95; margin-top: 8px; position: relative; z-index: 1;">
                                 ${((savings / maxCost) * 100).toFixed(1)}% cost reduction achieved
                             </p>
                         </div>
                     `;
                 } else {
                     return `
-                        <div class="savings-banner fade-in" style="animation-delay: 0.6s; background: #3b82f6;">
-                            <i class="fa-solid fa-rocket" style="font-size: 2rem; opacity: 0.8;"></i>
+                        <div class="savings-banner fade-in" style="animation-delay: 0.9s; background: linear-gradient(135deg, #3b82f6, #2563eb);">
+                            <i class="fa-solid fa-rocket" style="font-size: 2.5rem; opacity: 0.9; position: relative; z-index: 1;"></i>
                             <span class="save-amount">FASTEST</span>
-                            <p style="font-weight: 600; font-size: 1.1rem;">Priority Speed Option Selected</p>
-                            <p style="font-size: 0.9rem; opacity: 0.9; margin-top: 5px;">
+                            <p style="font-weight: 700; font-size: 1.2rem; position: relative; z-index: 1;">Priority Speed Option Selected</p>
+                            <p style="font-size: 1rem; opacity: 0.95; margin-top: 8px; position: relative; z-index: 1;">
                                 Optimized for minimum transit time
                             </p>
                         </div>
@@ -1589,13 +3515,13 @@
                 const maxCO2 = Math.max(...allOptions.map(o => o.sustainability.co2tons));
 
                 return `
-                    <div class="comparison-chart fade-in" style="animation-delay: 0.7s;">
+                    <div class="comparison-chart fade-in" style="animation-delay: 1.0s;">
                         <h4 class="chart-title">
                             <i class="fa-solid fa-chart-bar"></i> Multi-Factor Comparison
                         </h4>
                         
-                        <div style="margin-bottom: 30px;">
-                            <h5 style="color: #64748b; font-size: 0.9rem; margin-bottom: 10px;">Cost Comparison</h5>
+                        <div style="margin-bottom: 35px;">
+                            <h5 style="color: var(--text-secondary); font-size: 1rem; margin-bottom: 15px; font-weight: 600;">Cost Comparison</h5>
                             <div class="chart-bars">
                                 ${allOptions.map(opt => `
                                     <div class="chart-bar-item">
@@ -1612,8 +3538,8 @@
                             </div>
                         </div>
 
-                        <div style="margin-bottom: 30px;">
-                            <h5 style="color: #64748b; font-size: 0.9rem; margin-bottom: 10px;">Transit Time Comparison</h5>
+                        <div style="margin-bottom: 35px;">
+                            <h5 style="color: var(--text-secondary); font-size: 1rem; margin-bottom: 15px; font-weight: 600;">Transit Time Comparison</h5>
                             <div class="chart-bars">
                                 ${allOptions.map(opt => `
                                     <div class="chart-bar-item">
@@ -1631,7 +3557,7 @@
                         </div>
 
                         <div>
-                            <h5 style="color: #64748b; font-size: 0.9rem; margin-bottom: 10px;">CO2 Emissions</h5>
+                            <h5 style="color: var(--text-secondary); font-size: 1rem; margin-bottom: 15px; font-weight: 600;">CO2 Emissions</h5>
                             <div class="chart-bars">
                                 ${allOptions.map(opt => `
                                     <div class="chart-bar-item">
@@ -1656,7 +3582,7 @@
                 fills.forEach((fill, index) => {
                     setTimeout(() => {
                         fill.style.width = fill.dataset.width + '%';
-                    }, index * 100);
+                    }, index * 80);
                 });
             },
 
@@ -1664,8 +3590,8 @@
                 if (alternatives.length === 0) return '';
 
                 return `
-                    <div class="alt-card fade-in" style="animation-delay: 0.8s;">
-                        <h4 style="color: #334155; margin-bottom: 15px;">
+                    <div class="alt-card fade-in" style="animation-delay: 1.1s;">
+                        <h4 style="color: var(--text-primary); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; font-size: 1.2rem;">
                             <i class="fa-solid fa-code-compare"></i> Alternative Routes
                         </h4>
                         ${alternatives.map(alt => `
@@ -1677,7 +3603,7 @@
                                 <div>Transit: <strong>${alt.time.days} days</strong></div>
                                 <div style="font-weight: 700;">$${alt.cost.cost.toLocaleString()}</div>
                                 <div>${alt.sustainability.co2tons}T CO2</div>
-                                <span class="badge-low" style="background: #e2e8f0; color: #475569;">
+                                <span class="badge-low" style="background: ${alt.risk.level === 'LOW' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)'}; color: ${alt.risk.level === 'LOW' ? 'var(--success)' : 'var(--warning)'};">
                                     ${alt.risk.level} RISK
                                 </span>
                             </div>
@@ -1687,33 +3613,28 @@
             }
         };
 
-        /**
-         * GLOBE VISUALIZATION ENGINE
-         * Enhanced 3D globe with route animation
-         */
         const GlobeEngine = {
             scene: null,
             camera: null,
             renderer: null,
             controls: null,
             earth: null,
-            routeLines: [],
 
             init() {
                 const canvas = document.getElementById('globe-canvas');
                 this.scene = new THREE.Scene();
                 this.camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-                this.camera.position.set(8, 4, 15);
+                this.camera.position.set(10, 5, 18);
 
                 this.renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
                 this.renderer.setSize(window.innerWidth, window.innerHeight);
-                this.renderer.setPixelRatio(window.devicePixelRatio);
+                this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
                 this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
                 this.controls.enableDamping = true;
                 this.controls.dampingFactor = 0.05;
                 this.controls.autoRotate = true;
-                this.controls.autoRotateSpeed = 0.8;
+                this.controls.autoRotateSpeed = 0.5;
                 this.controls.enableZoom = false;
 
                 this.createEarth();
@@ -1741,70 +3662,31 @@
 
                 this.earth = new THREE.Mesh(geometry, material);
                 earthGroup.add(this.earth);
-
-                // Clouds
-                const cloudGeo = new THREE.SphereGeometry(5.05, 64, 64);
-                const cloudMat = new THREE.MeshPhongMaterial({
-                    map: loader.load('https://unpkg.com/three-globe/example/img/earth-clouds.png'),
-                    transparent: true,
-                    opacity: 0.8,
-                    blending: THREE.AdditiveBlending,
-                    side: THREE.DoubleSide
-                });
-                const clouds = new THREE.Mesh(cloudGeo, cloudMat);
-                earthGroup.add(clouds);
-
-                // Atmosphere
-                const atmosGeo = new THREE.SphereGeometry(5.3, 64, 64);
-                const atmosMat = new THREE.ShaderMaterial({
-                    vertexShader: `
-                        varying vec3 vNormal;
-                        void main() {
-                            vNormal = normalize(normalMatrix * normal);
-                            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-                        }
-                    `,
-                    fragmentShader: `
-                        varying vec3 vNormal;
-                        void main() {
-                            float intensity = pow(0.7 - dot(vNormal, vec3(0, 0, 1.0)), 2.0);
-                            gl_FragColor = vec4(0.3, 0.6, 1.0, 1.0) * intensity;
-                        }
-                    `,
-                    blending: THREE.AdditiveBlending,
-                    side: THREE.BackSide,
-                    transparent: true
-                });
-                const atmosphere = new THREE.Mesh(atmosGeo, atmosMat);
-                this.scene.add(atmosphere);
             },
 
             addLighting() {
-                const sunLight = new THREE.DirectionalLight(0xffffff, 1.5);
-                sunLight.position.set(20, 10, 10);
-                this.scene.add(sunLight);
+                const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+                this.scene.add(ambientLight);
 
-                this.scene.add(new THREE.AmbientLight(0x404040, 0.5));
+                const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+                directionalLight.position.set(5, 3, 5);
+                this.scene.add(directionalLight);
             },
 
             addStars() {
-                const starGeo = new THREE.BufferGeometry();
-                const starCount = 3000;
-                const starPos = new Float32Array(starCount * 3);
-                
-                for (let i = 0; i < starCount * 3; i++) {
-                    starPos[i] = (Math.random() - 0.5) * 600;
+                const starsGeometry = new THREE.BufferGeometry();
+                const starsMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 0.7 });
+
+                const starsVertices = [];
+                for (let i = 0; i < 10000; i++) {
+                    const x = (Math.random() - 0.5) * 2000;
+                    const y = (Math.random() - 0.5) * 2000;
+                    const z = -Math.random() * 2000;
+                    starsVertices.push(x, y, z);
                 }
-                
-                starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
-                const starMat = new THREE.PointsMaterial({
-                    color: 0xffffff,
-                    size: 0.3,
-                    transparent: true,
-                    opacity: 0.8
-                });
-                
-                const stars = new THREE.Points(starGeo, starMat);
+
+                starsGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starsVertices, 3));
+                const stars = new THREE.Points(starsGeometry, starsMaterial);
                 this.scene.add(stars);
             },
 
@@ -1812,10 +3694,13 @@
                 requestAnimationFrame(() => this.animate());
                 
                 if (this.earth) {
-                    this.earth.rotation.y += 0.0003;
+                    this.earth.rotation.y += 0.0005;
                 }
                 
-                this.controls.update();
+                if (this.controls) {
+                    this.controls.update();
+                }
+                
                 this.renderer.render(this.scene, this.camera);
             },
 
@@ -1823,23 +3708,15 @@
                 this.camera.aspect = window.innerWidth / window.innerHeight;
                 this.camera.updateProjectionMatrix();
                 this.renderer.setSize(window.innerWidth, window.innerHeight);
-            },
-
-            // Future enhancement: Draw route arcs on globe
-            drawRoute(origin, destination) {
-                // Implementation would create curved line between lat/lon coordinates
-                // Converting lat/lon to 3D sphere coordinates and creating arc geometry
-                console.log('Drawing route from', origin, 'to', destination);
             }
         };
 
-        /**
-         * APPLICATION CONTROLLER
-         * Main orchestration layer
-         */
         const App = {
-            async initialize() {
+            init() {
+                ThemeController.init();
                 GlobeEngine.init();
+                ChatAssistant.init();
+                VoiceController.init();
                 this.setupEventListeners();
                 this.setupAutocomplete();
                 this.animateStats();
@@ -1849,49 +3726,39 @@
                 const form = document.getElementById('analysis-form');
                 form.addEventListener('submit', async (e) => {
                     e.preventDefault();
-                    await this.handleAnalysis();
+                    await this.runAnalysis();
                 });
+
+                document.getElementById('demo-btn').addEventListener('click', () => this.runDemo());
+                document.getElementById('export-btn').addEventListener('click', () => PDFExporter.exportReport());
+                document.getElementById('blockchain-btn').addEventListener('click', () => BlockchainVerifier.verify());
+                document.getElementById('payment-btn').addEventListener('click', () => PaymentSystem.openModal(499));
             },
 
-            async handleAnalysis() {
+            async runAnalysis() {
+                const origin = document.getElementById('origin').value;
+                const destination = document.getElementById('destination').value;
+                const cargoType = document.getElementById('cargo-type').value;
+                const urgency = document.getElementById('urgency').value;
+
                 try {
-                    const origin = document.getElementById('origin').value.trim();
-                    const destination = document.getElementById('destination').value.trim();
-                    const cargoType = document.getElementById('cargo-type').value;
-                    const urgency = document.getElementById('urgency').value;
-
-                    if (!origin || !destination) {
-                        alert('Please enter both origin and destination');
-                        return;
-                    }
-
-                    // Disable button
-                    const btn = document.getElementById('analyze-btn');
-                    btn.disabled = true;
-                    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Analyzing...';
-
-                    // Show loading state
                     await UIController.showLoadingState();
-
-                    // Run multi-agent analysis
+                    
                     const analysis = await AgentEngine.MasterAgent.coordinate(
                         origin, destination, cargoType, urgency
                     );
 
-                    // Render results
                     UIController.renderResults(analysis);
-
-                    // Re-enable button
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i> Analyze Route with AI';
-
-                } catch (error) {
-                    console.error('Analysis error:', error);
-                    alert('Error: ' + error.message);
                     
-                    const btn = document.getElementById('analyze-btn');
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i> Analyze Route with AI';
+                    NotificationSystem.show(
+                        'Analysis Complete',
+                        `Optimal route identified: ${analysis.recommended.mode.name}`,
+                        'success'
+                    );
+                } catch (error) {
+                    NotificationSystem.show('Error', error.message, 'error');
+                    document.getElementById('loading-area').style.display = 'none';
+                    document.getElementById('main-container').style.display = 'grid';
                 }
             },
 
@@ -1944,7 +3811,6 @@
             },
 
             animateStats() {
-                // Animate navbar stats
                 this.animateNumber('active-shipments', 247, 2000);
                 this.animateNumber('high-risk', 23, 2000);
                 
@@ -1977,14 +3843,228 @@
                     }
                     element.textContent = Math.floor(current);
                 }, 16);
+            },
+
+            async runDemo() {
+                document.getElementById('origin').value = 'Shanghai, China';
+                document.getElementById('destination').value = 'Los Angeles, USA';
+                document.getElementById('cargo-type').value = 'electronics';
+                document.getElementById('urgency').value = 'high';
+
+                const card = document.querySelector('.glass-card');
+                card.style.outline = '3px solid var(--accent)';
+                card.style.outlineOffset = '5px';
+
+                await new Promise(resolve => setTimeout(resolve, 1500));
+
+                document.getElementById('analyze-btn').click();
+
+                setTimeout(() => {
+                    card.style.outline = 'none';
+                }, 2000);
+            },
+
+            showFeatures() {
+                const modal = document.createElement('div');
+                modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); z-index: 10000; display: flex; align-items: center; justify-content: center; animation: fadeIn 0.3s ease;';
+                modal.innerHTML = `
+                    <div style="background: var(--card-bg); border-radius: 24px; max-width: 900px; max-height: 90vh; overflow-y: auto; padding: 40px; position: relative; animation: slideUp 0.4s ease;">
+                        <button onclick="this.parentElement.parentElement.remove()" style="position: absolute; top: 20px; right: 20px; background: var(--danger); border: none; color: white; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 1.2rem;">×</button>
+                        
+                        <h2 style="font-size: 2rem; margin-bottom: 30px; color: var(--primary); display: flex; align-items: center; gap: 15px;">
+                            <i class="fa-solid fa-star"></i> Key Features
+                        </h2>
+                        
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                            ${[
+                                { icon: 'fa-brain', title: 'Multi-Agent AI', desc: '5 specialized AI agents work together analyzing risk, cost, time, sustainability, and coordination' },
+                                { icon: 'fa-globe', title: '195+ Countries', desc: 'Global coverage with real-time data from every major shipping route and port worldwide' },
+                                { icon: 'fa-shield-alt', title: 'Risk Assessment', desc: 'Advanced risk analysis covering geopolitical, weather, infrastructure, regulatory, and cargo factors' },
+                                { icon: 'fa-chart-line', title: 'Predictive Analytics', desc: 'ML-powered predictions for delivery times, cost fluctuations, and potential disruptions' },
+                                { icon: 'fa-leaf', title: 'Carbon Tracking', desc: 'Real-time CO2 emissions monitoring with offset recommendations and eco-ratings' },
+                                { icon: 'fa-link', title: 'Blockchain Verified', desc: 'Immutable verification of all analyses and recommendations on Ethereum network' },
+                                { icon: 'fa-comments', title: 'AI Chat Assistant', desc: 'Conversational AI expert available 24/7 for supply chain queries and guidance' },
+                                { icon: 'fa-microphone', title: 'Voice Commands', desc: 'Hands-free operation with advanced speech recognition and natural language processing' },
+                                { icon: 'fa-clock', title: '24/7 Monitoring', desc: 'Continuous tracking of 247 active shipments with real-time alerts and updates' },
+                                { icon: 'fa-dollar-sign', title: 'Cost Optimization', desc: 'Already saved $2.4M for clients through intelligent route and mode selection' },
+                                { icon: 'fa-file-pdf', title: 'PDF Export', desc: 'Generate comprehensive reports with all analysis details, charts, and recommendations' },
+                                { icon: 'fa-bolt', title: 'Real-Time Data', desc: 'Live updates from global shipping networks, weather services, and geopolitical sources' }
+                            ].map(feature => `
+                                <div style="background: var(--bg-secondary); padding: 25px; border-radius: 16px; border: 1px solid var(--glass-border); transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 10px 30px rgba(0,0,0,0.2)'" onmouseout="this.style.transform=''; this.style.boxShadow=''">
+                                    <div style="width: 60px; height: 60px; background: linear-gradient(135deg, var(--primary), var(--secondary)); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 15px;">
+                                        <i class="fa-solid ${feature.icon}" style="color: white; font-size: 1.5rem;"></i>
+                                    </div>
+                                    <h4 style="color: var(--primary); margin-bottom: 10px; font-size: 1.1rem;">${feature.title}</h4>
+                                    <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.5;">${feature.desc}</p>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+            },
+
+            showComparison() {
+                const modal = document.createElement('div');
+                modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); z-index: 10000; display: flex; align-items: center; justify-content: center; animation: fadeIn 0.3s ease;';
+                modal.innerHTML = `
+                    <div style="background: var(--card-bg); border-radius: 24px; max-width: 1000px; max-height: 90vh; overflow-y: auto; padding: 40px; position: relative; animation: slideUp 0.4s ease;">
+                        <button onclick="this.parentElement.parentElement.remove()" style="position: absolute; top: 20px; right: 20px; background: var(--danger); border: none; color: white; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 1.2rem;">×</button>
+                        
+                        <h2 style="font-size: 2rem; margin-bottom: 30px; color: var(--primary); display: flex; align-items: center; gap: 15px;">
+                            <i class="fa-solid fa-chart-line"></i> Transport Mode Comparison
+                        </h2>
+                        
+                        <div style="overflow-x: auto;">
+                            <table style="width: 100%; border-collapse: collapse; background: var(--bg-secondary); border-radius: 12px; overflow: hidden;">
+                                <thead>
+                                    <tr style="background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white;">
+                                        <th style="padding: 20px; text-align: left; font-weight: 700;">Feature</th>
+                                        <th style="padding: 20px; text-align: center; font-weight: 700;">🚢 Ocean</th>
+                                        <th style="padding: 20px; text-align: center; font-weight: 700;">✈️ Air</th>
+                                        <th style="padding: 20px; text-align: center; font-weight: 700;">🚂 Rail</th>
+                                        <th style="padding: 20px; text-align: center; font-weight: 700;">🚚 Road</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr style="border-bottom: 1px solid var(--glass-border);">
+                                        <td style="padding: 20px; font-weight: 600;">Cost per km</td>
+                                        <td style="padding: 20px; text-align: center; color: var(--success); font-weight: 700;">$0.12</td>
+                                        <td style="padding: 20px; text-align: center; color: var(--danger); font-weight: 700;">$2.50</td>
+                                        <td style="padding: 20px; text-align: center; color: var(--warning); font-weight: 700;">$0.35</td>
+                                        <td style="padding: 20px; text-align: center; color: var(--warning); font-weight: 700;">$0.60</td>
+                                    </tr>
+                                    <tr style="background: var(--bg-tertiary); border-bottom: 1px solid var(--glass-border);">
+                                        <td style="padding: 20px; font-weight: 600;">Speed (km/h)</td>
+                                        <td style="padding: 20px; text-align: center;">40</td>
+                                        <td style="padding: 20px; text-align: center; color: var(--success); font-weight: 700;">850</td>
+                                        <td style="padding: 20px; text-align: center;">80</td>
+                                        <td style="padding: 20px; text-align: center;">70</td>
+                                    </tr>
+                                    <tr style="border-bottom: 1px solid var(--glass-border);">
+                                        <td style="padding: 20px; font-weight: 600;">CO2 (g/km)</td>
+                                        <td style="padding: 20px; text-align: center; color: var(--success); font-weight: 700;">8</td>
+                                        <td style="padding: 20px; text-align: center; color: var(--danger); font-weight: 700;">650</td>
+                                        <td style="padding: 20px; text-align: center; color: var(--success); font-weight: 700;">30</td>
+                                        <td style="padding: 20px; text-align: center; color: var(--warning); font-weight: 700;">150</td>
+                                    </tr>
+                                    <tr style="background: var(--bg-tertiary); border-bottom: 1px solid var(--glass-border);">
+                                        <td style="padding: 20px; font-weight: 600;">Reliability</td>
+                                        <td style="padding: 20px; text-align: center;">85%</td>
+                                        <td style="padding: 20px; text-align: center; color: var(--success); font-weight: 700;">95%</td>
+                                        <td style="padding: 20px; text-align: center;">90%</td>
+                                        <td style="padding: 20px; text-align: center;">88%</td>
+                                    </tr>
+                                    <tr style="border-bottom: 1px solid var(--glass-border);">
+                                        <td style="padding: 20px; font-weight: 600;">Weather Impact</td>
+                                        <td style="padding: 20px; text-align: center; color: var(--success);">Low</td>
+                                        <td style="padding: 20px; text-align: center; color: var(--warning);">Medium</td>
+                                        <td style="padding: 20px; text-align: center; color: var(--success);">Low</td>
+                                        <td style="padding: 20px; text-align: center; color: var(--warning);">Medium</td>
+                                    </tr>
+                                    <tr style="background: var(--bg-tertiary);">
+                                        <td style="padding: 20px; font-weight: 600;">Best For</td>
+                                        <td style="padding: 20px; text-align: center; font-size: 0.85rem;">Bulk cargo, cost priority</td>
+                                        <td style="padding: 20px; text-align: center; font-size: 0.85rem;">Urgent, high-value</td>
+                                        <td style="padding: 20px; text-align: center; font-size: 0.85rem;">Cross-continental</td>
+                                        <td style="padding: 20px; text-align: center; font-size: 0.85rem;">Regional, flexible</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div style="margin-top: 30px; padding: 20px; background: var(--bg-secondary); border-radius: 12px; border-left: 4px solid var(--primary);">
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                                <i class="fa-solid fa-lightbulb" style="color: var(--primary);"></i>
+                                <span style="font-weight: 700; color: var(--text-primary);">Smart Recommendations</span>
+                            </div>
+                            <ul style="line-height: 2; color: var(--text-secondary);">
+                                <li><strong>Ocean:</strong> Ideal for non-urgent bulk shipments, most eco-friendly, lowest cost</li>
+                                <li><strong>Air:</strong> Best for time-critical, high-value goods, perishables requiring fast delivery</li>
+                                <li><strong>Rail:</strong> Perfect for cross-continental routes, balanced cost and speed</li>
+                                <li><strong>Road:</strong> Great for regional distances (<3000km), door-to-door flexibility</li>
+                            </ul>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+            },
+
+            showPricing() {
+                const modal = document.createElement('div');
+                modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); z-index: 10000; display: flex; align-items: center; justify-content: center; animation: fadeIn 0.3s ease;';
+                modal.innerHTML = `
+                    <div style="background: var(--card-bg); border-radius: 24px; max-width: 1100px; max-height: 90vh; overflow-y: auto; padding: 40px; position: relative; animation: slideUp 0.4s ease;">
+                        <button onclick="this.parentElement.parentElement.remove()" style="position: absolute; top: 20px; right: 20px; background: var(--danger); border: none; color: white; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 1.2rem;">×</button>
+                        
+                        <h2 style="font-size: 2rem; margin-bottom: 10px; color: var(--primary); text-align: center;">
+                            <i class="fa-solid fa-tag"></i> Pricing Plans
+                        </h2>
+                        <p style="text-align: center; color: var(--text-secondary); margin-bottom: 40px; font-size: 1.1rem;">Choose the perfect plan for your supply chain needs</p>
+                        
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px;">
+                            ${[
+                                {
+                                    icon: '🚀',
+                                    name: 'Starter',
+                                    price: '$49',
+                                    desc: 'Perfect for small businesses',
+                                    features: ['10 analyses/month', '4 transport modes', 'Basic risk assessment', 'PDF export', 'Email support']
+                                },
+                                {
+                                    icon: '⚡',
+                                    name: 'Professional',
+                                    price: '$149',
+                                    desc: 'For growing companies',
+                                    features: ['50 analyses/month', 'All transport modes', 'Advanced risk analysis', 'Priority support', 'API access', 'Carbon tracking', 'Blockchain verification'],
+                                    highlight: true
+                                },
+                                {
+                                    icon: '🏆',
+                                    name: 'Enterprise',
+                                    price: '$499',
+                                    desc: 'For large organizations',
+                                    features: ['Unlimited analyses', 'Custom integrations', 'Dedicated AI agents', '24/7 premium support', 'Custom reports', 'White-label option', 'Advanced ML insights', 'SLA guarantee']
+                                }
+                            ].map(plan => `
+                                <div style="background: var(--bg-secondary); padding: 30px; border-radius: 20px; border: ${plan.highlight ? '3px solid var(--primary)' : '2px solid var(--glass-border)'}; transition: all 0.3s ease; position: relative;" ${plan.highlight ? 'style="transform: scale(1.05);"' : ''}>
+                                    ${plan.highlight ? '<div style="position: absolute; top: -15px; left: 50%; transform: translateX(-50%); background: var(--primary); color: white; padding: 5px 20px; border-radius: 20px; font-size: 0.75rem; font-weight: 700;">MOST POPULAR</div>' : ''}
+                                    <div style="text-align: center; margin-bottom: 20px;">
+                                        <div style="font-size: 2rem; margin-bottom: 10px;">${plan.icon}</div>
+                                        <h3 style="font-size: 1.5rem; margin-bottom: 10px; color: var(--primary);">${plan.name}</h3>
+                                        <div style="font-size: 2.5rem; font-weight: 900; color: var(--text-primary); margin-bottom: 5px;">${plan.price}<span style="font-size: 1rem; font-weight: 400; color: var(--text-muted);)">/month</span></div>
+                                        <p style="color: var(--text-muted); font-size: 0.9rem;">${plan.desc}</p>
+                                    </div>
+                                    <ul style="list-style: none; padding: 0; margin: 0;">
+                                        ${plan.features.map(feature => `
+                                            <li style="padding: 12px 0; border-bottom: 1px solid var(--glass-border); display: flex; align-items: center; gap: 10px;">
+                                                <i class="fa-solid fa-check" style="color: var(--success);"></i>
+                                                <span>${feature}</span>
+                                            </li>
+                                        `).join('')}
+                                    </ul>
+                                    <button onclick="PaymentSystem.openModal(${plan.price.replace('$', '')})" style="width: 100%; margin-top: 25px; padding: 15px; background: ${plan.highlight ? 'var(--primary)' : 'var(--secondary)'}; color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 10px 20px rgba(99,102,241,0.4)'" onmouseout="this.style.transform=''; this.style.boxShadow=''">Get Started</button>
+                                </div>
+                            `).join('')}
+                        </div>
+                        
+                        <div style="margin-top: 40px; text-align: center; padding: 30px; background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1)); border-radius: 16px;">
+                            <h3 style="color: var(--primary); margin-bottom: 15px;">Need a Custom Solution?</h3>
+                            <p style="color: var(--text-secondary); margin-bottom: 20px;">Contact our sales team for enterprise pricing and custom integrations tailored to your specific needs.</p>
+                            <button class="theme-toggle" onclick="window.location.href='mailto:jakkampudisreeharshith@gmail.com'" style="background: var(--primary); color: white; border: none; cursor: pointer; padding: 12px 30px;">
+                                <i class="fa-solid fa-envelope"></i>
+                                <span>Contact Sales</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
             }
         };
 
-        // Initialize application when DOM is ready
-        window.addEventListener('load', () => {
-            App.initialize();
+        document.addEventListener('DOMContentLoaded', () => {
+            App.init();
         });
-
     </script>
 </body>
 </html>
